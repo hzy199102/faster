@@ -18,10 +18,13 @@ recentrepo = E:/git/hzy
 sideband = false
 [credential]
 helper = store
+完全不担心密码暴露
 2.git push 代码
 push 你的代码 (git push), 这时会让你输入用户名和密码, 这一步输入的用户名密码会被记住, 下次再 push 代码时就不用输入用户名密码!
 这一步会在用户目录下生成文件.git-credential 记录用户名密码的信息
 3.git config --global credential.helper reset
-如果想清除账号和密码
+如果想清除账号和密码,输入这行命令后，用户目录下的.gitconfig 文件：
+helper = store 会变成 helper = reset
+这时候的确再次提交 git 需要输入账号密码
 4.git config --global credential.helper cache
 如果想临时存储（默认 15 分钟）
