@@ -28,3 +28,7 @@ helper = store 会变成 helper = reset
 这时候的确再次提交 git 需要输入账号密码
 4.git config --global credential.helper cache
 如果想临时存储（默认 15 分钟）
+5.git 单独对某个项目免密
+在 https 链接里加入 username:password。
+git remote add origin https://username:password@xxx.git
+这些配置保存在项目的.git/config 里。
