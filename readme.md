@@ -32,3 +32,4 @@ helper = store 会变成 helper = reset
 在 https 链接里加入 username:password。
 git remote add origin https://username:password@xxx.git
 这些配置保存在项目的.git/config 里。
+我测试了下，发现失败了，但是我没深究，这个跳过了。
