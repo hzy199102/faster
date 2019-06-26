@@ -7,6 +7,17 @@ faster faster faster
 这一步会在用户目录下的.gitconfig 文件最后添加：
 [credential]
 helper = store
+以下是我完整的文件内容：
+[user]
+name = huangzy
+email = huangzy@glodon.com
+[gui]
+recentrepo = E:/gradnsoft/gitspace/ironman
+recentrepo = E:/git/hzy
+[sendpack]
+sideband = false
+[credential]
+helper = store
 2.git push 代码
 push 你的代码 (git push), 这时会让你输入用户名和密码, 这一步输入的用户名密码会被记住, 下次再 push 代码时就不用输入用户名密码!
 这一步会在用户目录下生成文件.git-credential 记录用户名密码的信息
