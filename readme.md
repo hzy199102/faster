@@ -1,7 +1,7 @@
 faster faster faster
 
 1.测试下 git 提交!
-用 vscode 的时候，git clone 下来的项目首次提交需要输入账号密码，注意是 2 次，注意看弹出框提示。
+用 vscode 的时候，git clone 下来的项目首次提交需要输入账号密码，注意是 2 次，注意看弹出框提示！
 非常麻烦，解决方案如下：
 1.git config --global credential.helper store
 这一步会在用户目录下的.gitconfig 文件最后添加：
