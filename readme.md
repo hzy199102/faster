@@ -1,36 +1,13 @@
 faster faster faster
 
-1.测试下 git 提交!
-用 vscode 的时候，git clone 下来的项目首次提交需要输入账号密码，注意是 2 次，注意看弹出框提示！
-非常麻烦，解决方案如下：
-1.git config --global credential.helper store
-这一步会在用户目录下的.gitconfig 文件最后添加：
-[credential]
-helper = store
-以下是我完整的文件内容：
-[user]
-name = huangzy
-email = huangzy@glodon.com
-[gui]
-recentrepo = E:/gradnsoft/gitspace/ironman
-recentrepo = E:/git/hzy
-[sendpack]
-sideband = false
-[credential]
-helper = store
-完全不担心密码暴露
-2.git push 代码
-push 你的代码 (git push), 这时会让你输入用户名和密码, 这一步输入的用户名密码会被记住, 下次再 push 代码时就不用输入用户名密码!
-这一步会在用户目录下生成文件.git-credential 记录用户名密码的信息
-3.git config --global credential.helper reset
-如果想清除账号和密码,输入这行命令后，用户目录下的.gitconfig 文件：
-helper = store 会变成 helper = reset
-这时候的确再次提交 git 需要输入账号密码
-4.git config --global credential.helper cache
-如果想临时存储（默认 15 分钟）
-5.git 单独对某个项目免密
-在 https 链接里加入 username:password。
-git remote add origin https://username:password@xxx.git
-这些配置保存在项目的.git/config 里。
-我测试了下，发现失败了，但是我没深究，这个跳过了。
-参考资料：https://blog.csdn.net/lilongsy/article/details/87182952【避免git每次clone/push输入账号和密码】
+待看
+https://www.cnblogs.com/caizhenbo/p/6836390.html【【前端安全】JavaScript防XSS攻击】
+https://www.cnblogs.com/jiasm/p/9160691.html【原生ES-Module在浏览器中的尝试】
+https://segmentfault.com/a/1190000014318751【图说 ES Modules】
+https://cli.vuejs.org/zh/guide/browser-compatibility.html#%E7%8E%B0%E4%BB%A3%E6%A8%A1%E5%BC%8F【vuecli】
+
+1. 测试下 git 提交!
+   docs/git.md
+2. 为了了解 ECM 概念，先去了解了 script 标签，并引申了部分浏览器渲染过程，主要是 DOMContentLoaded 和 load 的区别
+   docs/script 标签的 async 和 defer.md
+   docs/DOMContentLoaded 和 load 的区别.md
