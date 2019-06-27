@@ -3,18 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <title>example</title>
+    <link href="/link1.css" rel="stylesheet" />
   </head>
 
   <body>
     <h1>Hello</h1>
-    <script type="text/javascript" src="/script2.js"></script>
-    <script type="text/javascript" src="/script1.js"></script>
-    <!-- <script defer type="text/javascript" src="/script2.js"></script>
-    <script defer type="text/javascript" src="/script1.js"></script> -->
+    <!-- <script type="text/javascript" src="/script2.js"></script>
+    <script type="text/javascript" src="/script1.js"></script> -->
+    <script defer type="text/javascript" src="/script2.js"></script>
+    <script defer type="text/javascript" src="/script1.js"></script>
     <!-- <script async type="text/javascript" src="/script2.js"></script>
     <script async type="text/javascript" src="/script1.js"></script> -->
     <!-- <script async type="text/javascript" src="/script3.js"></script> -->
-    <p>after script tags</p>
+    <p id="p">after script tags</p>
+    <!-- <script type="text/javascript" src="/script2.js"></script>
+    <script type="text/javascript" src="/script1.js"></script> -->
+    <script type="text/javascript" defer>
+      console.log("inline-script不支持defer");
+    </script>
+    <script type="module">
+      console.log("module支持defer");
+    </script>
     <script type="text/javascript">
       window.addEventListener("DOMContentLoaded", function() {
         console.log("DOMContentLoaded");

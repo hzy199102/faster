@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>example</title>
+    <link href="/link1.css" rel="stylesheet" />
+  </head>
+  <!-- 调研module基本使用方式以及 module defer -->
+  <!-- <body>
+    <h1>Hello</h1>
+    <script async type="text/javascript" src="/script3.js"></script>
+    <p id="p">after script tags</p>
+    <script type="module">
+      import message from "./script1.js";
+      console.log(message); // hello world
+      console.log("module支持defer");
+    </script>
+    <script nomodule>
+      alert("your browsers can not supports es modules! please upgrade it.");
+    </script>
+    <script type="text/javascript" defer>
+      console.log("inline-script不支持defer");
+    </script>
+  </body> -->
+  <!-- 调研module async -->
+  <!-- <body>
+    <h1>Hello</h1>
+    <p id="p">after script tags</p>
+    <script type="module" async>
+      // 先找到引用模块，在执行js代码，所以path在引用时还没初始化
+      // var path = './script3.js'
+      // import message from path;
+      import message from "./script3.js";
+      console.log("log输出顺序完全取决于script3.js加载的时长");
+    </script>
+    <script async type="module" src="/script2.js"></script>
+    <script async type="module" src="/script2.js?a=1"></script>
+  </body> -->
+  <!-- 循环依赖 -->
+  <body>
+    <h1>Hello</h1>
+    <p id="p">after script tags</p>
+    <script async type="module" src="/main1.js"></script>
+  </body>
+</html>

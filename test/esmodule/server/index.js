@@ -1,12 +1,13 @@
 const http = require("http");
 const fs = require("fs");
 
-const port = 12307;
+const port = 12306;
 const rootPath = "./client/";
 const htmlReg = /^\/(index)?$/;
 const cssReg = /^\/(link)([12])/;
 const scriptReg = /^\/(script)([12])/;
 const scriptFastReg = /^\/(script3)/;
+const mainReg = /^\/(main)([12])/;
 
 http
   .createServer((req, res) => {
@@ -15,13 +16,22 @@ http
       case cssReg.test(url):
         res.setHeader("Content-Type", "text/css");
         res.writeHead(200, { "Content-Type": "text/css" });
-        setTimeout(() => {
-          res.end(
-            fs.readFileSync(
-              `${rootPath}${url.match(cssReg)[1]}${url.match(cssReg)[2]}.css`
-            )
-          );
-        }, url.match(cssReg)[2] * 1000);
+        res.end(
+          fs.readFileSync(
+            `${rootPath}${url.match(cssReg)[1]}${url.match(cssReg)[2]}.css`
+          )
+        );
+        break;
+      case mainReg.test(url):
+        res.setHeader("Content-Type", "application/javascript");
+        res.writeHead(200, {
+          "Content-Type": "application/javascript"
+        });
+        res.end(
+          fs.readFileSync(
+            `${rootPath}${url.match(mainReg)[1]}${url.match(mainReg)[2]}.js`
+          )
+        );
         break;
       case scriptReg.test(url):
         res.setHeader("Content-Type", "application/javascript");
@@ -39,9 +49,11 @@ http
       case scriptFastReg.test(url):
         res.setHeader("Content-Type", "application/javascript");
         res.writeHead(200, { "Content-Type": "application/javascript" });
-        res.end(
-          fs.readFileSync(`${rootPath}${url.match(scriptFastReg)[1]}.js`)
-        );
+        setTimeout(() => {
+          res.end(
+            fs.readFileSync(`${rootPath}${url.match(scriptFastReg)[1]}.js`)
+          );
+        }, 1 * 1000);
         break;
       case htmlReg.test(url):
         res.setHeader("Content-Type", "text/html");
