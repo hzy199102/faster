@@ -1,5 +1,6 @@
 参考资料：https://www.cnblogs.com/jiasm/p/9160691.html【原生ES-Module在浏览器中的尝试】
 https://segmentfault.com/a/1190000014318751【图说 ES Modules】
+https://jakearchibald.com/2017/es-modules-in-browsers/#always-cors【ECMAScript modules in browsers】
 
 demo:test/esmodule
 
@@ -56,6 +57,10 @@ module 的注意细节：
    这个 module 是否唯一的定义是资源对应的完整路径是否一致。
    如果当前页面路径为https://www.baidu.com/a/b/c.html，则文件中的/module.js、../../module.js与https://www.baidu.com/module.js都会被认为是同一个module。
    但是像这个例子中的 module1.js 与 module1.js?a=1 就被认定为两个 module，所以这个代码执行的结果就是会加载两次 module1.js。
+
+5. 与常规脚本不同，模块脚本（及其导入）是通过CORS获取的。这意味着跨源模块脚本必须返回有效的CORS头文件，如访问控制允许源文件：*。
+   client: <script async type="module" src="http://127.0.0.1:12307/script1.js"></script>
+   server: res.setHeader("Access-Control-Allow-Origin", "*");
 
 为什么要模块化
 
@@ -180,7 +185,7 @@ ESM 原理
    import {name, age} from './module'
    console.log(name, age) // Niko 20
 
-4. 导出全部的语法如下：import \* as allThings from './iport/module.js'
+4. 导出全部的语法如下：import * as allThings from './iport/module.js'
 
 总结：
 1. ESM 分构建，实例化，运行3个步骤，构建时，模块定位符必须是URL；遍历依赖树，先解析文件，然后找出依赖，最后又定位并加载这些依赖，如此往复，直到建立整个依赖关系图。
@@ -192,3 +197,4 @@ ESM 原理
    ESM 则使用称为实时绑定（Live Binding）的方式。导出和导入的模块都指向相同的内存地址（即值引用）。所以，当导出模块内导出的值改变后，导入模块中的值也实时改变了。
 3. 运行是往已申请好的内存空间中填入真实值。支持循环依赖
 4. module和nomodule是性能优化的关键之一，保证低版本浏览器和高版本浏览器对polyfill的支持，减小高版本js文件的体积
+5. 跨源模块脚本必须返回有效的CORS头文件，如访问控制允许源文件：*

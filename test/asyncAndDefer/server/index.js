@@ -25,6 +25,7 @@ http
         break;
       case scriptReg.test(url):
         res.setHeader("Content-Type", "application/javascript");
+        res.setHeader("Access-Control-Allow-Origin", "*");
         res.writeHead(200, { "Content-Type": "application/javascript" });
         setTimeout(() => {
           res.end(

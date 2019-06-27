@@ -37,9 +37,18 @@
     <script async type="module" src="/script2.js?a=1"></script>
   </body> -->
   <!-- 循环依赖 -->
-  <body>
+  <!-- <body>
     <h1>Hello</h1>
     <p id="p">after script tags</p>
     <script async type="module" src="/main1.js"></script>
+  </body> -->
+  <body>
+    <h1>Hello</h1>
+    <p id="p">after script tags</p>
+    <script
+      async
+      type="module"
+      src="http://127.0.0.1:12307/script1.js"
+    ></script>
   </body>
 </html>
