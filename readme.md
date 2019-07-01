@@ -13,3 +13,6 @@ https://cli.vuejs.org/zh/guide/browser-compatibility.html#%E7%8E%B0%E4%BB%A3%E6%
    docs/ESModule.md
 4. 加入数据结构相关项目
    docs/数据结构.html
+5. google 开发者 Web Fundamentals（web 基本原理）
+   从 web 基本原理开始，阐述各种性能优化，本次是【避免大型、复杂的布局和布局抖动】以及【Chrome 运行时性能瓶颈分析】
+   docs/Web Fundamentals.md
