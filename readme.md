@@ -3,6 +3,7 @@ faster faster faster
 待看
 https://www.cnblogs.com/caizhenbo/p/6836390.html【【前端安全】JavaScript防XSS攻击】
 https://cli.vuejs.org/zh/guide/browser-compatibility.html#%E7%8E%B0%E4%BB%A3%E6%A8%A1%E5%BC%8F【vuecli】
+https://developers.google.com/web/fundamentals/?hl=zh-cn【Web Fundamentals】
 
 1. 测试下 git 提交!
    docs/git.md
