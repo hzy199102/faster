@@ -4,6 +4,7 @@ faster faster faster
 https://www.cnblogs.com/caizhenbo/p/6836390.html【【前端安全】JavaScript防XSS攻击】
 https://cli.vuejs.org/zh/guide/browser-compatibility.html#%E7%8E%B0%E4%BB%A3%E6%A8%A1%E5%BC%8F【vuecli】
 https://developers.google.com/web/fundamentals/?hl=zh-cn【Web Fundamentals】
+https://csswizardry.com/2013/01/front-end-performance-for-web-designers-and-front-end-developers/#section:dns-prefetching【Web设计人员和前端开发人员的前端性能】
 
 1. 测试下 git 提交!
    docs/git.md
@@ -17,3 +18,4 @@ https://developers.google.com/web/fundamentals/?hl=zh-cn【Web Fundamentals】
 5. google 开发者 Web Fundamentals（web 基本原理）
    从 web 基本原理开始，阐述各种性能优化，本次是【避免大型、复杂的布局和布局抖动】以及【Chrome 运行时性能瓶颈分析】
    docs/Web Fundamentals.md
+6.
