@@ -18,4 +18,9 @@ https://csswizardry.com/2013/01/front-end-performance-for-web-designers-and-fron
 5. google 开发者 Web Fundamentals（web 基本原理）
    从 web 基本原理开始，阐述各种性能优化，本次是【避免大型、复杂的布局和布局抖动】以及【Chrome 运行时性能瓶颈分析】
    docs/Web Fundamentals.md
-6.
+6. 预加载的深度调研
+   prefetch.md
+   总结一下就是全部的预加载配置都是无效的
+7. 字体深度调研
+   @font-face(字体)详解.md
+   不同字体的混搭的实现思路

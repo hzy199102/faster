@@ -1,21 +1,80 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!-- 测试dns-prefetch -->
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
+    <!-- 测试dns-prefetch -->
     <meta charset="utf-8" />
-    <!-- <link rel="dns-prefetch" href="https://op-gdq.glodon.com" /> -->
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
-    <link
+
+    <!-- 测试dns-prefetch 失败-->
+    <!-- <link rel="dns-prefetch" href="//op-gdq.glodon.com" /> -->
+    <!-- 测试dns-prefetch -->
+
+    <!-- 测试preconnect 失败-->
+    <!-- <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+    <link href="/link1.css" rel="stylesheet" /> -->
+    <!-- <link
       href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Open+Sans"
       rel="stylesheet"
-    />
+    /> -->
+    <!-- 测试preconnect -->
+
+    <!-- 测试Prefetch -->
+    <!-- <link
+      rel="dns-prefetch"
+      href="https://op-gdq.glodon.com/images/8d3e75ae3076becafcc1275d6fa2b084.jpg"
+    /> -->
+    <!-- 测试Prefetch -->
+    <linkrel="prerender" href="http://127.0.0.1:12401"/>
+    <!-- 测试prerender -->
+
+    <!-- 测试prerender -->
     <title>资源预拉取（prefetch）</title>
   </head>
   <body>
-    <h1 style="font-family: 'Open Sans',sans-serif;">
-      资源预拉取（prefetch）3
-    </h1>
+    <!-- 测试dns-prefetch -->
     <!-- <img
-      src="https://op-gdq.glodon.com/images/da84fdfb852c442f4aff8ec31de89481.jpg"
+      src="https://op-gdq.glodon.com/images/d56c0019916ba436acd6b4921836f161.jpg"
     /> -->
+    <!-- 测试dns-prefetch -->
+
+    <!-- 测试preconnect -->
+    <!-- <h1 style="font-family: 'Open Sans',sans-serif; font-weight: 400;">
+      资源预拉取（prefetch）
+    </h1>
+    <h1 style="font-family: 'Open Sans',sans-serif; font-weight: 700;">
+      资源预拉取（prefetch）
+    </h1> -->
+    <!-- 测试preconnect -->
+
+    <!-- <img
+      src="https://op-gdq.glodon.com/images/d56c0019916ba436acd6b4921836f161.jpg"
+    /> -->
+
+    <!-- 测试Prefetch -->
+    <!-- <script type="text/javascript">
+      window.onload = function() {
+        setTimeout(function() {
+          var img = new Image();
+          img.src =
+            "https://op-gdq.glodon.com/images/8d3e75ae3076becafcc1275d6fa2b084.jpg";
+          document.body.append(img);
+        }, 2000);
+      };
+    </script> -->
+    <!-- 测试Prefetch -->
+
+    <!-- 测试prerender -->
+    <h1 style="font-family: 'Open Sans',sans-serif; font-weight: 700;">
+      资源预拉取（prefetch）
+    </h1>
+    <script type="text/javascript">
+      window.onload = function() {
+        setTimeout(function() {
+          window.location.href = "http://127.0.0.1:12401";
+        }, 5000);
+      };
+    </script>
+    <!-- 测试prerender -->
   </body>
 </html>
