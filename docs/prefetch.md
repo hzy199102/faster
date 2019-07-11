@@ -1,5 +1,6 @@
 参考资料
 https://blog.csdn.net/franktaoge/article/details/51473823【前端性能优化－－预加载技术】
+https://www.igvita.com/2015/08/17/eliminating-roundtrips-with-preconnect/【通过预连接消除往返】
 
 prefetch
 资源预拉取（prefetch）是一种性能优化的技术。通过预拉取可以告诉浏览器用户在未来可能用到哪些资源。
