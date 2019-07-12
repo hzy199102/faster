@@ -1,22 +1,90 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+    <script src="https://unpkg.com/axios@0.19.0/dist/axios.min.js"></script>
+    <title>图片处理</title>
+  </head>
 
-<head>
-  <meta charset="utf-8" />
+  <body>
+    <div id="app">
+      <h1>
+        图片处理
+      </h1>
+      <img
+        :src="thumb"
+        style="max-width: 300px; max-height: 300px; display: block;"
+      />
+      <div>{{ progressText }}</div>
+      <input type="file" id="file_1" @change="changeFile" />
+      <button @click="upload_1">点我上传图片</button>
+    </div>
 
-  <title>图片处理</title>
-</head>
-
-<body>
-
-  <h1>
-    图片处理
-  </h1>
-  <script type="text/javascript">
-    window.onload = function () {
-      console.log('加载成功1222')
-    };
-  </script>
-</body>
-
+    <script type="text/javascript">
+      var app = new Vue({
+        el: "#app",
+        data: {
+          file: null,
+          thumb: null,
+          progress: -1
+        },
+        computed: {
+          progressText() {
+            var text = "准备上传";
+            if (this.progress === -1) {
+              text = "准备上传";
+            } else if (this.progress === 100) {
+              text = "上传完毕";
+            } else {
+              text = "上传中：" + this.progress + "%";
+            }
+            return text;
+          }
+        },
+        methods: {
+          changeFile: function(e) {
+            this.progress = -1;
+            this.file = e.target.files[0];
+            var reads = new FileReader();
+            reads.readAsDataURL(e.target.files[0]);
+            reads.onload = e => {
+              this.thumb = e.currentTarget.result;
+            };
+          },
+          upload_1: function() {
+            var formData = new FormData();
+            // 这里确认文件上传的key是file，nodejs的接口要对应处理这个字段
+            formData.append("file", this.file);
+            var config = {
+              //添加请求头
+              headers: { "Content-Type": "multipart/form-data" },
+              //添加上传进度监听事件
+              onUploadProgress: e => {
+                this.progress = ((e.loaded / e.total) * 100) | 0;
+                if (e.loaded === e.total) {
+                  console.log("上传完毕");
+                }
+              }
+            };
+            axios
+              .post("/file/exif", formData, config)
+              .then(function(response) {
+                console.log(response);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
+          // logout: async function() {
+          //   await axios.post("/users/logout");
+          // },
+          // getUser: async function() {
+          //   await axios.get("/users/getUser");
+          // }
+        }
+      });
+    </script>
+  </body>
 </html>

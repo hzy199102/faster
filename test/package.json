@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "koa": "^2.7.0",
+    "koa-multer": "^1.0.2",
     "koa-router": "^7.4.0",
     "koa-static": "^5.0.0"
   }

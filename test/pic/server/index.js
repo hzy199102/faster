@@ -6,7 +6,7 @@ const path = require("path");
 /**
  * 静态资源
  */
-const static = require('koa-static')
+const static = require("koa-static");
 // const bodyparser = require('koa-bodyparser')
 /**
  * 路由
@@ -22,11 +22,11 @@ app.use(async (ctx, next) => {
     await next();
   } catch (error) {
     // 系统日志
-    console.log(error);
+    // console.log(error);
     // 给用户显示信息
     // ctx.status = error.statusCode || error.status || 500;
     // ctx.type = "json";
-    ctx.type = 'text'
+    ctx.type = "text";
     if (error.expose) {
       ctx.body = error.message;
     } else {
@@ -39,7 +39,11 @@ app.use(async (ctx, next) => {
 });
 
 // 静态文件服务
-app.use(static(path.resolve('./client')))
+app.use(static(path.resolve("./client")));
+
+// 导入路由文件
+const fileTool = require("./routes/fileTool");
+app.use(fileTool.routes());
 
 // 监听全局错误事件
 app.on("error", err => {
@@ -47,11 +51,8 @@ app.on("error", err => {
 });
 
 // 监听端口≈
-app.listen(port, function () {
-  console.log(path.resolve('./'))
-  console.log(__dirname)
+app.listen(port, function() {
+  console.log(path.resolve("./"));
+  console.log(__dirname);
   console.log(`server run as http://127.0.0.1:${port}`);
 });
-
-
-
