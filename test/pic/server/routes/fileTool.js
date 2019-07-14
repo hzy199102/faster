@@ -1,10 +1,17 @@
 const Router = require("koa-router");
 const router = new Router({ prefix: "/file" });
-const uploadMiddleware = require("../middleware/upload");
+const uploadMulterMiddleware = require("../middleware/upload_multer");
+const uploadTinyMiddleware = require("../middleware/upload_body");
 
-router.post("/exif", uploadMiddleware, async ctx => {
+router.post("/multer", uploadMulterMiddleware, async ctx => {
   ctx.body = {
-    message: "上传成功"
+    message: "multer上传成功"
+  };
+});
+
+router.post("/tiny", uploadTinyMiddleware, async ctx => {
+  ctx.body = {
+    message: "tiny上传成功"
   };
 });
 

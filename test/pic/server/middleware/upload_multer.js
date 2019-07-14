@@ -1,10 +1,13 @@
+/**
+ * koa-multer与koa-body不兼容，后期用koa-body处理
+ */
 const multer = require("koa-multer");
 const path = require("path");
 
 const upload = multer({
   storage: multer.diskStorage({
     destination: function(req, file, callback) {
-      callback(null, "./uploads/");
+      callback(null, "./upload/multer/");
     },
     filename: function(req, file, callback) {
       callback(null, file.originalname);
@@ -27,7 +30,7 @@ const upload = multer({
 
 // 上传图片中间件
 module.exports = async (ctx, next) => {
-  console.log(upload.toString());
+  // console.log(upload.toString());
   /**
    * 这里是关键，在multer中，这里的写法是upload(req,res,(err)=>{}
    * 但是这是koa-multer,是promise函数，所以一定要如下写法
@@ -49,7 +52,7 @@ module.exports = async (ctx, next) => {
     err => {
       console.log(err);
       ctx.body = {
-        message: "上传失败"
+        message: "multer上传失败"
       };
     }
   );
