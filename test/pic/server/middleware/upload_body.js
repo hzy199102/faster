@@ -13,7 +13,7 @@ var mimetyps = ["image/png", "image/jpg", "image/jpeg"];
 
 // 上传图片中间件
 module.exports = async (ctx, next) => {
-  
+
   // file属性来源于前端预定上传的字段
   // 上传单个文件
   const file = ctx.request.files.file; // 获取上传文件
@@ -24,11 +24,32 @@ module.exports = async (ctx, next) => {
     // 创建可读流
     const reader = fs.createReadStream(file.path);
     let filePath = path.join(__dirname, '../../upload/tiny/' + `/${file.size}_${file.name}`);
-    console.log(filePath)
     // 创建可写流
     const upStream = fs.createWriteStream(filePath);
     // 可读流通过管道写入可写流
     reader.pipe(upStream);
+    const source = tinify.fromFile(filePath);
+    var startTime = Date.now()
+    // source.result().size().then((size) => {
+    //   source.toFile(path.join(__dirname, '../../upload/tiny/' + `/optimized_${size}_${file.name}`)).then(()=>{
+    //     console.log(Date.now() - startTime)
+    //   });
+    // })
+    let optimizedFilePath = path.join(__dirname, '../../upload/tiny/' + `/optimized_${file.name}`)
+    // source.toFile(optimizedFilePath).then((e) => {
+    //   console.log(Date.now() - startTime)
+    //   console.log(fs.statSync(optimizedFilePath).size)
+    //   console.log(Date.now() - startTime)
+    // });
+    //Uint8Array
+    source.toBuffer().then((u8a) => {
+      console.log(Date.now() - startTime)
+      console.log(u8a.length)
+      fs.writeFileSync(optimizedFilePath, u8a)
+      console.log(Date.now() - startTime)
+    });
+
+    console.log(1111)
     await next();
   } else {
     console.log('文件类型有误');
