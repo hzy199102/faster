@@ -15,7 +15,7 @@ const Router = require("koa-router");
 
 const app = new Koa();
 
-const port = 12601;
+const port = 12602;
 
 // 错误处理中间件写在最上面
 app.use(async (ctx, next) => {
@@ -46,10 +46,12 @@ app.use(static(path.resolve("./client")));
 /**
  * koa2 使用 koa-body 代替 koa-bodyparser 和 koa-multer
  */
-const koaBody = require('koa-body')
-app.use(koaBody({
-  multipart: true // 支持文件上传
-}));
+const koaBody = require("koa-body");
+app.use(
+  koaBody({
+    multipart: true // 支持文件上传
+  })
+);
 // 导入路由文件
 const fileTool = require("./routes/fileTool");
 app.use(fileTool.routes());
@@ -60,7 +62,7 @@ app.on("error", err => {
 });
 
 // 监听端口≈
-app.listen(port, function () {
+app.listen(port, function() {
   console.log(path.resolve("./"));
   console.log(__dirname);
   console.log(`server run as http://127.0.0.1:${port}`);

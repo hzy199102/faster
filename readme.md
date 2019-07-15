@@ -27,3 +27,4 @@ https://csswizardry.com/2013/01/front-end-performance-for-web-designers-and-fron
 8. 图片处理 demo
    koa + vue + axios
    图片处理.md
+   https模拟上传文件和下载文件，配置请求头，操作文件流，tiny的压缩部分全部搞定
