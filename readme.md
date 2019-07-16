@@ -5,6 +5,7 @@ https://www.cnblogs.com/caizhenbo/p/6836390.html【【前端安全】JavaScript�
 https://cli.vuejs.org/zh/guide/browser-compatibility.html#%E7%8E%B0%E4%BB%A3%E6%A8%A1%E5%BC%8F【vuecli】
 https://developers.google.com/web/fundamentals/?hl=zh-cn【Web Fundamentals】
 https://csswizardry.com/2013/01/front-end-performance-for-web-designers-and-front-end-developers/#section:dns-prefetching【Web设计人员和前端开发人员的前端性能】
+https://cloud.tencent.com/developer/article/1150960【腾讯是如何大幅降低带宽和网络流量的】
 
 1. 测试下 git 提交!
    docs/git.md

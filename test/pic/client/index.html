@@ -58,7 +58,7 @@
             reads.onload = e => {
               this.thumb = e.currentTarget.result;
               EXIF.getData(this.file, function() {
-                console.log(this);
+                console.log(EXIF.getTag(this, "Orientation"));
                 console.log(EXIF.getAllTags(this));
               });
             };
