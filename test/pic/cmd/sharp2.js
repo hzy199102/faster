@@ -15,10 +15,10 @@ const imgPath = path.join(__dirname, "../source/"),
  *
  * 这是最基础的图片压缩
  */
-var test1 = function() {
-  sharp(path.join(imgPath, "(109).jpg"))
+var test1 = function () {
+  sharp(path.join(imgPath, "微信图片2.jpg"))
     //   .resize(300, 200)
-    .toFile(path.join(optimizedPath, "(109)2.jpg"), function(err) {
+    .toFile(path.join(optimizedPath, "微信图片2_1.jpg"), function (err) {
       // output.jpg is a 300 pixels wide and 200 pixels high image
       // containing a scaled and cropped version of input.jpg
     });
@@ -27,7 +27,7 @@ var test1 = function() {
 /**
  * 这个方式可以拿到压缩后图片的简单的数据，比如图片的宽高，大小，比较实用
  */
-var test2 = function() {
+var test2 = function () {
   // 创建可读流
   const readableStream = fs.createReadStream(path.join(imgPath, "(109).jpg"));
   // 创建可写流
@@ -36,7 +36,7 @@ var test2 = function() {
   );
   var transformer = sharp()
     // .resize(300)
-    .on("info", function(info) {
+    .on("info", function (info) {
       console.log(info);
       console.log("Image height is " + info.height);
     });
@@ -52,7 +52,7 @@ var test2 = function() {
  * 获取Sharp实例的“快照”，返回一个新实例。克隆的实例继承其父实例的输入。这允许多个输出流并因此允许多个处理流水线共享单个输入流。
  * 通俗的说就是一个输入流可以被复制而产生多个输出流，比如一个图片同时被不同程度的压缩和转webp
  */
-var test3 = function() {
+var test3 = function () {
   // 创建可读流
   const readableStream = fs.createReadStream(
     path.join(imgPath, "微信图片2.jpg")
@@ -68,7 +68,7 @@ var test3 = function() {
   pipeline
     .clone()
     // .resize(800, 600)
-    .on("info", function(info) {
+    .on("info", function (info) {
       console.log(info);
       console.log("Image1 height is " + info.height);
     })
@@ -81,7 +81,7 @@ var test3 = function() {
       width: 100,
       height: 100
     })
-    .on("info", function(info) {
+    .on("info", function (info) {
       console.log(info);
       console.log("Image2 height is " + info.height);
     })
@@ -97,14 +97,22 @@ var test3 = function() {
  * 在sharp的使用中有人遇到和我一样的问题，我搜索的关键字是【nodejs exif buffer encoding】，巧的是sharp的作者给了答复，并且让我明白，sharp有功能测试！
  * https://github.com/lovell/sharp/blob/master/test/unit/metadata.js#L46-L49 这个功能测试让我明白需要用exif-reader插件
  *
- * 如果需要
+ * Metadata：Total size of image in bytes, for Stream and Buffer input only
+ * sharp(input?: string | Buffer, options?: sharp.SharpOptions)
+ * 综上说明：sharp(path.join(imgPath, "微信图片2.jpg")).metadata().then(function (metadata) {console.log(metadata.size)});是无法获取metadata.size的
+ * 只能如下：
+ * const readableStream = fs.createReadStream(path.join(imgPath, "微信图片2.jpg"));
+ * var img = sharp();
+ * img.metadata().then(function (metadata) {console.log(metadata.size)}
+ * readableStream.pipe(img);
  */
-var test4 = function() {
+var test4 = function () {
+  // 这样获取不到size
   const image = sharp(path.join(imgPath, "微信图片2.jpg"));
-  image.metadata().then(function(metadata) {
+  image.metadata().then(function (metadata) {
     console.log(metadata);
-    const exif = exifReader(metadata.exif);
-    console.log(exif);
+    // const exif = exifReader(metadata.exif);
+    // console.log(exif);
     // return image
     //   .resize(Math.round(metadata.width / 2))
     //   .webp()
@@ -113,13 +121,61 @@ var test4 = function() {
   // .then(function(data) {
   //   // data contains a WebP image half the width and height of the original JPEG
   // });
+  // 这样可以获取size
+  const readableStream = fs.createReadStream(path.join(imgPath, "微信图片2.jpg"));
+  const img = sharp();
+  img.metadata().then(function (metadata) { console.log(metadata.size) });
+  readableStream.pipe(img);
 };
 
-var test5 = function() {
-  const image = sharp(path.join(imgPath, "微信图片2.jpg"));
-  image.withMetadata().toFile(path.join(optimizedPath, "(109)5.jpg")).then((info)=>{
-    console.log(info)
-  })
+/**
+ * 【微信图片2.jpg】（2.14M），用sharp压缩：1.10M，用tiny只有481KB，差距太明显了。
+ * 这个测试主要是测试withMetadata是否保存了exif信息
+ * 使用了clone技术，共享一个输入流
+ * 
+ */
+var test5 = function () {
+  // 创建可读流
+  const readableStream = fs.createReadStream(
+    path.join(imgPath, "微信图片2.jpg")
+    // path.join(imgPath, "(109).jpg")
+    // path.join(imgPath, "00012.png")
+  );
+  const pipeline = sharp().rotate()
+  const imageClone = pipeline.clone();
+  const imageClone2 = pipeline.clone();
+  imageClone
+    .withMetadata()
+    .metadata()
+    .then((info) => {
+      console.log(11111111111)
+      console.log(info)
+      return imageClone
+    }).then((data) => {
+      return data.toFile(path.join(optimizedPath, "微信图片2_5_1.jpg"))
+    }).then((data) => {
+      console.log(data)
+      sharp(path.join(optimizedPath, "微信图片2_5_1.jpg")).metadata().then((info) => {
+        console.log(1111111)
+        console.log(info)
+      })
+    })
+  imageClone2
+    .metadata()
+    .then((info) => {
+      console.log(222222222)
+      console.log(info)
+      return imageClone2
+    }).then((data) => {
+      return data.toFile(path.join(optimizedPath, "微信图片2_5_2.jpg"))
+    }).then((data) => {
+      console.log(data)
+      sharp(path.join(optimizedPath, "微信图片2_5_2.jpg")).metadata().then((info) => {
+        console.log(222222222)
+        console.log(info)
+      })
+    })
+  readableStream.pipe(pipeline);
 };
 
-test6();
+test5();
