@@ -47,7 +47,8 @@ var test2 = function() {
  * 这里涉及到2个知识点
  * rotate
  * 1. 如果提供了一个角度，它将转换为有效的正度数旋转。例如，-450将产生270度旋转。
- * 2. 根据exif方向标记，以显式角度或自动方向旋转输出图像。不过我提供了ios手机旋转的照片，但没发现有自动调整的情况，不知道是我拍摄的照片有什么要求吗？
+ * 2. 根据exif方向标记，以显式角度或自动方向旋转输出图像。
+ *
  * clone
  * 获取Sharp实例的“快照”，返回一个新实例。克隆的实例继承其父实例的输入。这允许多个输出流并因此允许多个处理流水线共享单个输入流。
  * 通俗的说就是一个输入流可以被复制而产生多个输出流，比如一个图片同时被不同程度的压缩和转webp
@@ -78,14 +79,19 @@ var test3 = function() {
     .extract({
       left: 20,
       top: 20,
-      width: 100,
-      height: 100
+      width: 500,
+      height: 500
     })
     .on("info", function(info) {
       console.log(info);
       console.log("Image2 height is " + info.height);
     })
     .pipe(secondWritableStream);
+  // 千万注意：pipe是异步的
+  // var stream = reader.pipe(upStream);
+  // stream.on("finish", () => {
+  //   // end ... do something ...
+  // });
   readableStream.pipe(pipeline);
 };
 
@@ -96,23 +102,72 @@ var test3 = function() {
  * https://github.com/lovell/sharp/issues/285【如何解码元数据EXIF缓冲区】
  * 在sharp的使用中有人遇到和我一样的问题，我搜索的关键字是【nodejs exif buffer encoding】，巧的是sharp的作者给了答复，并且让我明白，sharp有功能测试！
  * https://github.com/lovell/sharp/blob/master/test/unit/metadata.js#L46-L49 这个功能测试让我明白需要用exif-reader插件
+ * 这个方法可以获取原图的信息，这个在压缩图片的时候可以带入适当参数，比如宽高，比如size，比如统计压缩比
  *
- * 如果需要
  */
 var test4 = function() {
   const image = sharp(path.join(imgPath, "微信图片2.jpg"));
+  image
+    .rotate()
+    .metadata()
+    .then(function(metadata) {
+      console.log(metadata);
+      // metadata.exif是照片元数据，需要工具进行数据读取
+      // const exif = exifReader(metadata.exif);
+      // console.log(exif);
+
+      // throw的数据走reject，如果没有reject方法，会提示运行错误
+      // throw 222222;
+
+      // 这里返回什么then就接受什么数据
+      return image
+        .resize(Math.round(metadata.width / 2), metadata.height)
+        .webp();
+      // .toBuffer();
+    })
+    .then(
+      data => {
+        const secondWritableStream = fs.createWriteStream(
+          path.join(optimizedPath, "(109)5.jpg")
+        );
+        data.pipe(secondWritableStream);
+      },
+      err => {
+        console.log(err);
+      }
+    );
+};
+
+/**
+ * withMetadata
+ * 压缩文件的时候会自动去除exif信息，但是如果加上这个，就不会去掉
+ */
+var test5 = function() {
+  sharp(path.join(imgPath, "微信图片2.jpg"))
+    .withMetadata()
+    .toFile(path.join(optimizedPath, "微信图片2.jpg"))
+    .then(info => {
+      console.log(info);
+      return sharp(path.join(optimizedPath, "微信图片2.jpg"));
+    })
+    .then(data => {
+      data.metadata().then(function(metadata) {
+        console.log(111111);
+        console.log(metadata);
+        // metadata.exif是照片元数据，需要工具进行数据读取
+        const exif = exifReader(metadata.exif);
+        console.log(exif);
+      });
+    });
+
+  const image = sharp(path.join(imgPath, "微信图片2.jpg"));
   image.metadata().then(function(metadata) {
+    console.log(22222);
     console.log(metadata);
+    // metadata.exif是照片元数据，需要工具进行数据读取
     const exif = exifReader(metadata.exif);
     console.log(exif);
-    // return image
-    //   .resize(Math.round(metadata.width / 2))
-    //   .webp()
-    //   .toBuffer();
   });
-  // .then(function(data) {
-  //   // data contains a WebP image half the width and height of the original JPEG
-  // });
 };
 
 test4();
