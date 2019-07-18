@@ -36,6 +36,7 @@ Web Fundamentals-性能-加载性能
    4. 调整图像大小
       从服务器检索大图像，然后使用 CSS 在浏览器中调整大小。这是以前的常用操作，但是现在使用阿里云存储图片，就可以使用它的图片裁剪技术
       https://help.aliyun.com/document_detail/44686.html?spm=5176.doc44688.6.934.W5dAil【文档】
+      阿里云的图片服务支持对服务器的图片下发时候的裁剪，缩放，但是从api看不支持上传图片的压缩，裁剪，所以需要本地处理
    5. 图片转 webp
       https://www.imqianduan.com/nodejs/246.html【nodejs应用转换png,jpg,gif为webp图片格式】
       https://www.jianshu.com/p/66ea1c37c2fe【JavaScript自动转换淘宝图片格式.webp】

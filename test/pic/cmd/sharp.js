@@ -104,8 +104,17 @@ var test3 = function() {
  * https://github.com/lovell/sharp/blob/master/test/unit/metadata.js#L46-L49 这个功能测试让我明白需要用exif-reader插件
  * 这个方法可以获取原图的信息，这个在压缩图片的时候可以带入适当参数，比如宽高，比如size，比如统计压缩比
  *
+ * Metadata：Total size of image in bytes, for Stream and Buffer input only
+ * sharp(input?: string | Buffer, options?: sharp.SharpOptions)
+ * 综上说明：sharp(path.join(imgPath, "微信图片2.jpg")).metadata().then(function (metadata) {console.log(metadata.size)});是无法获取metadata.size的
+ * 只能如下：
+ * const readableStream = fs.createReadStream(path.join(imgPath, "微信图片2.jpg"));
+ * var img = sharp();
+ * img.metadata().then(function (metadata) {console.log(metadata.size)}
+ * readableStream.pipe(img);
  */
 var test4 = function() {
+  // 这样获取不到metadata.size
   const image = sharp(path.join(imgPath, "微信图片2.jpg"));
   image
     .rotate()
@@ -136,45 +145,138 @@ var test4 = function() {
         console.log(err);
       }
     );
+  // 这样可以获取metadata.size
+  const readableStream = fs.createReadStream(
+    path.join(imgPath, "微信图片2.jpg")
+  );
+  const img = sharp();
+  img.metadata().then(function(metadata) {
+    console.log(metadata.size);
+  });
+  readableStream.pipe(img);
 };
 
 /**
- * withMetadata
- * 压缩文件的时候会自动去除exif信息，但是如果加上这个，就不会去掉
+ * 【微信图片2.jpg】（2.14M），用sharp压缩：1.10M，用tiny只有481KB，差距太明显了。
+ * 这个测试主要是测试withMetadata是否保存了exif信息
+ * 使用了clone技术，共享一个输入流
+ *
  */
 var test5 = function() {
-  sharp(path.join(imgPath, "微信图片2.jpg"))
+  // 创建可读流
+  const readableStream = fs.createReadStream(
+    path.join(imgPath, "微信图片2.jpg")
+    // path.join(imgPath, "(109).jpg")
+    // path.join(imgPath, "00012.png")
+  );
+  const pipeline = sharp().rotate();
+  const imageClone = pipeline.clone();
+  const imageClone2 = pipeline.clone();
+  imageClone
     .withMetadata()
-    .toFile(path.join(optimizedPath, "微信图片2.jpg"))
+    .metadata()
     .then(info => {
+      console.log(11111111111);
       console.log(info);
-      return sharp(path.join(optimizedPath, "微信图片2.jpg"));
+      return imageClone;
     })
     .then(data => {
-      data.metadata().then(function(metadata) {
-        console.log(111111);
-        console.log(metadata);
-        // metadata.exif是照片元数据，需要工具进行数据读取
-        const exif = exifReader(metadata.exif);
-        console.log(exif);
-      });
+      return data.toFile(path.join(optimizedPath, "微信图片2_5_1.jpg"));
+    })
+    .then(data => {
+      console.log(data);
+      sharp(path.join(optimizedPath, "微信图片2_5_1.jpg"))
+        .metadata()
+        .then(info => {
+          console.log(1111111);
+          console.log(info);
+        });
     });
-
-  const image = sharp(path.join(imgPath, "微信图片2.jpg"));
-  image.metadata().then(function(metadata) {
-    console.log(22222);
-    console.log(metadata);
-    // metadata.exif是照片元数据，需要工具进行数据读取
-    const exif = exifReader(metadata.exif);
-    console.log(exif);
-  });
+  imageClone2
+    .metadata()
+    .then(info => {
+      console.log(222222222);
+      console.log(info);
+      return imageClone2;
+    })
+    .then(data => {
+      return data.toFile(path.join(optimizedPath, "微信图片2_5_2.jpg"));
+    })
+    .then(data => {
+      console.log(data);
+      sharp(path.join(optimizedPath, "微信图片2_5_2.jpg"))
+        .metadata()
+        .then(info => {
+          console.log(222222222);
+          console.log(info);
+        });
+    });
+  readableStream.pipe(pipeline);
 };
 
-var test5 = function() {
-  const image = sharp(path.join(imgPath, "微信图片2.jpg"));
-  image.withMetadata().toFile(path.join(optimizedPath, "(109)5.jpg")).then((info)=>{
-    console.log(info)
-  })
+/**
+ * webp,jpeg,png三个方法都是可配置参数的，具体情况自己抉择
+ * 我就尝试了quality
+ *
+ */
+var test6 = function() {
+  // 创建可读流
+  const readableStream = fs.createReadStream(
+    path.join(imgPath, "微信图片2.jpg")
+    // path.join(imgPath, "(109).jpg")
+    // path.join(imgPath, "00012.png")
+  );
+  const pipeline = sharp().rotate();
+  const jpegObj = {
+    pipeline: pipeline.clone(),
+    size: 0,
+    min_size: 0,
+    min_path: path.join(optimizedPath, "sharp_6.jpg")
+  };
+  const webpObj = {
+    pipeline: pipeline.clone(),
+    size: 0,
+    min_size: 0,
+    min_path: path.join(optimizedPath, "sharp_6.webp")
+  };
+  jpegObj.pipeline
+    .metadata()
+    .then(metadata => {
+      jpegObj.size = metadata.size;
+      return jpegObj.pipeline;
+    })
+    .then(data => {
+      return data
+        .jpeg({
+          quality: 50
+        })
+        .toFile(jpegObj.min_path);
+    })
+    .then(data => {
+      jpegObj.min_size = data.size;
+      console.log(`jpegObj:${jpegObj.size}=>${jpegObj.min_size}`);
+    });
+  webpObj.pipeline
+    .metadata()
+    .then(metadata => {
+      webpObj.size = metadata.size;
+      return webpObj.pipeline;
+    })
+    .then(data => {
+      return data
+        .webp({
+          quality: 50
+        })
+        .toFile(webpObj.min_path);
+    })
+    .then(data => {
+      webpObj.min_size = data.size;
+      console.log(`webpObj:${webpObj.size}=>${webpObj.min_size}`);
+    });
+  readableStream.pipe(pipeline);
 };
 
-test6();
+var test7 = function() {
+  console.log(sharp.concurrency());
+};
+test7();
