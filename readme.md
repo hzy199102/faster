@@ -28,4 +28,5 @@ https://cloud.tencent.com/developer/article/1150960【腾讯是如何大幅降�
 8. 图片处理 demo
    koa + vue + axios
    图片处理.md
-   https模拟上传文件和下载文件，配置请求头，操作文件流，tiny的压缩部分全部搞定
+   https 模拟上传文件和下载文件，配置请求头，操作文件流，tiny 的压缩部分全部搞定
+9. 临时加入 ws server 测试工作
