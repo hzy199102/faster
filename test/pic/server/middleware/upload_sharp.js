@@ -69,6 +69,7 @@ module.exports = async (ctx, next) => {
   //   var all = EXIF.getAllTags(this);
   //   console.log("EXIF：" + all);
   // });
+  console.log(ctx.request.files);
   const extension = path.extname(file.name).toLowerCase();
   const mimetyp = file.type;
   if (extensions.includes(extension) && mimetyps.includes(mimetyp)) {

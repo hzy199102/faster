@@ -49,9 +49,13 @@ app.use(static(path.resolve("./client")));
 const koaBody = require("koa-body");
 app.use(
   koaBody({
-    multipart: true // 支持文件上传
+    multipart: true, // 支持文件上传
+    formidable: {
+      multipart: true // 支持多文件上传，默认开启
+    }
   })
 );
+
 // 导入路由文件
 const fileTool = require("./routes/fileTool");
 app.use(fileTool.routes());
@@ -61,7 +65,7 @@ app.on("error", err => {
   console.error(err);
 });
 
-// 监听端口≈
+// 监听端口
 app.listen(port, function() {
   console.log(path.resolve("./"));
   console.log(__dirname);

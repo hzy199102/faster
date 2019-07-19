@@ -3,10 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
     <script src="https://unpkg.com/axios@0.19.0/dist/axios.min.js"></script>
-    <!-- exif,查看图片元数据 -->
-    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <title>图片处理</title>
   </head>
 
@@ -15,25 +12,39 @@
       <h1>
         图片处理
       </h1>
-      <img
-        :src="thumb"
-        style="max-width: 300px; max-height: 300px; display: block;"
-      />
       <div>{{ progressText }}</div>
-      <input type="file" id="file_1" @change="changeFile" />
-      <button @click="upload_multer">点我上传图片(multer)</button>
-      <button @click="upload_tiny">点我上传图片(tiny)</button>
-      <div>{{ exif }}</div>
+      <input type="file" id="file_1" @change="changeFile" multiple />
+      <button @click="upload">生成压缩图片</button>
+      <div>
+        <div
+          v-for="(item, index) in imgList"
+          :key="index"
+          style="margin: 0 auto; margin-top: 20px;"
+        >
+          <div
+            v-for="(item2, index2) in item"
+            :key="index2"
+            style="margin-left: 10px; float: left;"
+          >
+            <img :src="item2.src" style="display: block;" />
+            <div>
+              <div>压缩方式：{{ item2.optimizedType }}</div>
+              <div>压缩耗时：{{ item2.optimizedTime }}</div>
+              <div>大小：{{ item2.size }}</div>
+            </div>
+          </div>
+          <div style="clear: both;"></div>
+        </div>
+      </div>
     </div>
 
     <script type="text/javascript">
       var app = new Vue({
         el: "#app",
         data: {
-          file: null,
-          thumb: null,
+          imgList: {},
           progress: -1,
-          exif: ""
+          files: []
         },
         computed: {
           progressText() {
@@ -52,21 +63,21 @@
         methods: {
           changeFile: function(e) {
             this.progress = -1;
-            this.file = e.target.files[0];
+            this.files = e.target.files;
             var reads = new FileReader();
             reads.readAsDataURL(e.target.files[0]);
             reads.onload = e => {
-              this.thumb = e.currentTarget.result;
-              EXIF.getData(this.file, function() {
-                console.log(EXIF.getTag(this, "Orientation"));
-                console.log(EXIF.getAllTags(this));
-              });
+              // console.log(e.currentTarget.result);
             };
           },
-          upload_multer: function() {
+          upload: function() {
+            console.log(this.files);
             var formData = new FormData();
             // 这里确认文件上传的key是file，nodejs的接口要对应处理这个字段
-            formData.append("file", this.file);
+            // 多文件上传是这样传，千万不要formData.append("file", this.files);这样写
+            for (let i = 0; i < this.files.length; i++) {
+              formData.append("file", this.files[i]);
+            }
             var config = {
               //添加请求头
               headers: { "Content-Type": "multipart/form-data" },
@@ -79,31 +90,7 @@
               }
             };
             axios
-              .post("/file/multer", formData, config)
-              .then(function(response) {
-                console.log(response);
-              })
-              .catch(function(error) {
-                console.log(error);
-              });
-          },
-          upload_tiny: function() {
-            var formData = new FormData();
-            // 这里确认文件上传的key是file，nodejs的接口要对应处理这个字段
-            formData.append("file", this.file);
-            var config = {
-              //添加请求头
-              headers: { "Content-Type": "multipart/form-data" },
-              //添加上传进度监听事件
-              onUploadProgress: e => {
-                this.progress = ((e.loaded / e.total) * 100) | 0;
-                if (e.loaded === e.total) {
-                  console.log("上传完毕");
-                }
-              }
-            };
-            axios
-              .post("/file/tiny", formData, config)
+              .post("/file/optimized", formData, config)
               .then(function(response) {
                 console.log(response);
               })
@@ -111,12 +98,6 @@
                 console.log(error);
               });
           }
-          // logout: async function() {
-          //   await axios.post("/users/logout");
-          // },
-          // getUser: async function() {
-          //   await axios.get("/users/getUser");
-          // }
         }
       });
     </script>
