@@ -1,8 +1,7 @@
 // 加载node上websocket模块 ws;
 var ws = require("ws");
-var ProtoBuf = require("protobufjs");
-var proto = require("./proto").proto;
-var builder = ProtoBuf.loadJson(proto);
+
+var tool = require("./tool").tool;
 
 // 启动基于websocket的服务器,监听我们的客户端接入进来。
 var server = new ws.Server({
@@ -33,23 +32,18 @@ function websocket_add_listener(client_sock) {
   client_sock.on("message", function(data) {
     var req = JSON.parse(data);
     // console.log(req);
-    if (req.cmd == 301) {
-      var PbImLoginRequest = builder.build("PbImLoginRequest");
-      var pbImLoginRequest = PbImLoginRequest.decode(req.msgBody);
-      // console.log(pbImLoginRequest);
-      var PbImLoginResponse = builder.build("PbImLoginResponse");
-      var pbImLoginResponse = new PbImLoginResponse();
-      pbImLoginResponse.setErrorCode(0);
+    var res = {
+      msg: "响应有误"
+    };
+    var functionName = "cmd_" + req.cmd;
+    if (tool[functionName]) {
+      res = tool[functionName](req);
+    } else {
       var res = {
-        cmd: 400,
-        seqid: req.seqid,
-        msgBody: Array.apply(
-          [],
-          new Uint8Array(pbImLoginResponse.toArrayBuffer())
-        )
+        msg: `cmd: ${req.cmd}没有对应响应操作`
       };
-      client_sock.send(JSON.stringify(res));
     }
+    client_sock.send(JSON.stringify(res));
   });
   // end
 }
