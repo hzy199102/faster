@@ -41,6 +41,7 @@ app.use(async (ctx, next) => {
 
 // 静态文件服务
 app.use(static(path.resolve("./client")));
+app.use(static(path.resolve("./server/upload")));
 // 注册bodyparser
 // app.use(bodyparser())
 /**

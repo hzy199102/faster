@@ -32,7 +32,7 @@ router.post(
   uploadOptimizedMiddleware(upload_static),
   async ctx => {
     ctx.body = {
-      message: ctx.state.upload
+      message: ctx.upload.res
     };
   }
 );

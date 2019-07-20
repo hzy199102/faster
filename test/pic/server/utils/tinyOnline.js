@@ -43,6 +43,7 @@ const options = {
  */
 function fileSave(filename, obj, optimizedDir) {
   return new Promise((resolve, reject) => {
+    var startTime = Date.now();
     let options = new URL(obj.output.url);
     let req = https.request(options, res => {
       let body = "";
@@ -51,8 +52,10 @@ function fileSave(filename, obj, optimizedDir) {
         body += data;
       });
       res.on("end", function() {
+        // console.log(`[${filename}]：下载压缩文件：${Date.now() - startTime}`);
         // 文件名加入size的特殊写法
         // path.basename(imgpath, path.extname(imgpath)) + `_${obj.input.size}${path.extname(imgpath)}`
+        var startTime2 = Date.now();
         fs.writeFile(
           path.join(optimizedDir, `/tinyOnline_${filename}`),
           body,
@@ -62,6 +65,9 @@ function fileSave(filename, obj, optimizedDir) {
               reject(err);
               return;
             }
+            // console.log(
+            //   `[${filename}]：保存压缩文件：${Date.now() - startTime2}`
+            // );
             var data = {
               size: obj.output.size
             };
@@ -89,9 +95,11 @@ function fileSave(filename, obj, optimizedDir) {
  */
 function fileTiny(imgPath, filename, optimizedDir) {
   return new Promise((resolve, reject) => {
+    var startTime = Date.now();
     var req = https.request(options, res => {
       res.on("data", res => {
         // console.log(res.toString());
+        // console.log(`[${filename}]：压缩耗时：${Date.now() - startTime}`);
         let obj = JSON.parse(res.toString());
         if (obj.error) {
           reject(`[${filename}]：压缩失败！报错：${obj.message}`);

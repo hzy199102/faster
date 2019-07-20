@@ -279,4 +279,30 @@ var test6 = function() {
 var test7 = function() {
   console.log(sharp.concurrency());
 };
-test7();
+
+// 测试方法名是否可以是参数化
+var test8 = function() {
+  var cmd = "jpeg";
+  // 创建可读流
+  const readableStream = fs.createReadStream(
+    path.join(imgPath, "微信图片2.jpg")
+  );
+  const pipeline = sharp().rotate();
+  const jpegObj = {
+    pipeline: pipeline.clone(),
+    size: 0,
+    min_size: 0,
+    min_path: path.join(optimizedPath, "sharp_6.jpg")
+  };
+  jpegObj.pipeline[cmd]({
+    quality: 80
+  })
+    .toFile(jpegObj.min_path)
+    .then(data => {
+      jpegObj.min_size = data.size;
+      console.log(`jpegObj:${jpegObj.size}=>${jpegObj.min_size}`);
+    });
+
+  readableStream.pipe(pipeline);
+};
+test8();
