@@ -15,6 +15,7 @@
       <div>{{ progressText }}</div>
       <input type="file" id="file_1" @change="changeFile" multiple />
       <button @click="upload">生成压缩图片</button>
+      <button @click="resize">获取缩放图片</button>
       <div>
         <div
           v-for="(item, index) in imgList"
@@ -91,6 +92,16 @@
             };
             axios
               .post("/file/optimized", formData, config)
+              .then(function(response) {
+                console.log(response);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          },
+          resize: function() {
+            axios
+              .get("/file/resize")
               .then(function(response) {
                 console.log(response);
               })

@@ -1,8 +1,10 @@
 const Router = require("koa-router");
+const fs = require("fs");
 const path = require("path");
 const router = new Router({ prefix: "/file" });
 const uploadMulterMiddleware = require("../middleware/upload_multer");
 const uploadOptimizedMiddleware = require("../middleware/upload_optimized");
+const uploadResizeMiddleware = require("../middleware/upload_resize");
 const uploadTinyTestMiddleware = require("../middleware/upload_tinyTest");
 
 const upload_static = {
@@ -36,5 +38,10 @@ router.post(
     };
   }
 );
+
+// 测试不走koa-static的内容怎么传递回前端，其实如果看koa-static的原理，应该也和这个类似
+router.get("/resize", uploadResizeMiddleware(upload_static), async ctx => {
+  
+});
 
 module.exports = router;
