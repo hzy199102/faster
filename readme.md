@@ -30,3 +30,5 @@ https://cloud.tencent.com/developer/article/1150960【腾讯是如何大幅降�
    图片处理.md
    https 模拟上传文件和下载文件，配置请求头，操作文件流，tiny 的压缩部分全部搞定
 9. 临时加入 ws server 测试工作
+10. 使用 settings sync 对多台设备的 vscode 配置进行同步
+11. 开始编写 demo:sendBeacon，前端数据上报

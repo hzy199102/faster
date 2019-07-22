@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://unpkg.com/axios@0.19.0/dist/axios.min.js"></script>
+    <title>前端数据上报</title>
+  </head>
+
+  <body>
+    <div id="app">
+      <button
+        @click="xhr({
+              fuc: 'xhr',
+              event: 'click'
+            })"
+      >
+        上报数据
+      </button>
+    </div>
+
+    <script type="text/javascript">
+      var app = new Vue({
+        el: "#app",
+        data: {},
+        computed: {},
+        created: function() {
+          this.ax({
+            fuc: "ax",
+            event: "onload"
+          });
+          window.addEventListener("beforeunload", e => {
+            // console.log("I want to cancel");
+            // // Cancel the event
+            // e.preventDefault();
+            // // Chrome requires returnValue to be set
+            // e.returnValue = "hello";
+            // axios是异步的，但是也成功了
+            // this.ax({
+            //   fuc: "ax",
+            //   event: "beforeunload"
+            // });
+            // 来一个同步原生操作，也成功了
+            // this.xhr({
+            //   fuc: "xhr",
+            //   event: "beforeunload"
+            // });
+          });
+        },
+        // destroyed是在被vue 被销毁的时候才会触发,但是页面刷新并没有触发vue 的销毁,它仅仅是浏览器的主动行为
+        // 想监听页面的刷新的或者浏览器的刷新操作.直接监听这个方法[beforeunload]的,在mounted 里面定义
+        destroyed: function() {
+          // console.log(111111);
+        },
+        methods: {
+          ax: function(params) {
+            var url = "/report";
+            var config = {
+              headers: { token: "hzy" }
+            };
+            axios
+              .post(url, params, config)
+              .then(function(response) {
+                console.log(response);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          },
+          // https://blog.csdn.net/sky786905664/article/details/53079487
+          // Synchronous XMLHttpRequest on the main thread is deprecated because of its detrimental effects to the end user's experience. 提示的处理
+          xhr: function(params) {
+            console.log(params);
+            var method = "POST";
+            var url = "/report";
+            var async = false; // 一定要同步，这样就能保证请求一定能发送到服务端，哪怕是网页关闭前
+            var headers = {
+              token: "hzy"
+            };
+            const xhr = new XMLHttpRequest();
+            xhr.open(method, url, async);
+            // 不同域下的XmlHttpRequest 响应，不论其Access-Control- header 设置什么值，都无法为它自身站点设置cookie值，
+            // 除非它在请求之前将withCredentials 设为true。
+            xhr.withCredentials = true;
+            // 设置header，是为了测试服务端取值操作
+            Object.keys(headers).forEach(key => {
+              xhr.setRequestHeader(key, headers[key]);
+            });
+            xhr.send(JSON.stringify(params));
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
