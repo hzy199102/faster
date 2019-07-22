@@ -57,7 +57,7 @@ module.exports = upload => {
     await new Promise((resolve, reject) => {
       // 这个是压缩之后的缩放，不是原图的缩放，但可以设置quality：100达到类似原图的缩放效果
       sharp(path.join(__dirname, "../../source/robot400.jpg"))
-      // sharp(path.join(__dirname, "../../source/(109).jpg"))
+        // sharp(path.join(__dirname, "../../source/(109).jpg"))
         // 设置100之后图片可能比原图还大
         // .jpeg({
         //   quality: 100
