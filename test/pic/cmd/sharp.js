@@ -305,4 +305,19 @@ var test8 = function() {
 
   readableStream.pipe(pipeline);
 };
-test8();
+// 生成1px图片
+var test9 = function() {
+  sharp(path.join(__dirname, "../source/robot400.jpg"))
+    // sharp(path.join(__dirname, "../../source/(109).jpg"))
+    // 设置100之后图片可能比原图还大
+    // .jpeg({
+    //   quality: 100
+    // })
+    // .resize({ width: 100 })
+    .resize(1, 1, {
+      kernel: sharp.kernel.nearest,
+      fit: "inside"
+    })
+    .toFile(path.join(optimizedPath, "sharp_9.jpg"));
+};
+test9();

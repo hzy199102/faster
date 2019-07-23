@@ -41,12 +41,17 @@
       >
         sendBeacon上报数据
       </button>
+      <button @click="getCros">
+        get跨域获取数据
+      </button>
     </div>
 
     <script type="text/javascript">
       var app = new Vue({
         el: "#app",
-        data: {},
+        data: {
+          url: "http://127.0.0.1:12603/report"
+        },
         computed: {},
         created: function() {
           this.ax({
@@ -92,19 +97,20 @@
         },
         methods: {
           sendBeacon: function(data) {
-            var url = "/report";
+            console.log(11111);
+            var url = this.url;
             // data: DOMString,如果数据类型是 string，则可以直接上报，此时该请求会自动设置请求头的 Content-Type 为 text/plain。
             // server端：ctx.request.body
             // var data = "DOMString";
-            // navigator.sendBeacon(url, data);
+            // navigator.sendBeacon(url, JSON.stringify(data));
             // data: Blob,如果用 Blob 发送数据，这时需要我们手动设置 Blob 的 MIME type，一般设置为 application/x-www-form-urlencoded。
             // 目前已知的可以设置headers的方式,但是会安全错误，暂时无解决方案
-            // const blob = new Blob([
-            //   JSON.stringify(data),
-            //   {
-            //     type: "application/x-www-form-urlencoded"
-            //   }
-            // ]);
+            // let headers = {
+            //   type: "application/x-www-form-urlencoded"
+            //   // type: "text/plain", // 可以指定传入不同类型
+            //   // token: "1111" // 传入非type以外的值都是无效的，会被过滤掉
+            // };
+            // let blob = new Blob([JSON.stringify(data)], headers);
             // navigator.sendBeacon(url, blob);
             // data: Formdata,可以直接创建一个新的 Formdata，此时该请求会自动设置请求头的 Content-Type 为 multipart/form-data。
             // server端：ctx.request.body,koa-body会自动进行JSON.parse操作。
@@ -120,8 +126,11 @@
             });
             navigator.sendBeacon(url, formData);
           },
+          // 图片上报数据一定要记住url加上随机数，否则会缓存
           sendImg: function(data) {
-            var url = "/report";
+            var url = this.url;
+            data.random = Date.now();
+            // url = "http://10.1.77.73:12802/";
             let img = document.createElement("img");
             const params = [];
             Object.keys(data).forEach(key => {
@@ -131,7 +140,7 @@
             img.src = `${url}?${params.join("&")}`;
           },
           ax: function(params) {
-            var url = "/report";
+            var url = this.url;
             var config = {
               headers: { token: "hzy" }
             };
@@ -144,12 +153,23 @@
                 console.log(error);
               });
           },
+          getCros: function() {
+            var url = "http://10.1.77.73:12802/";
+            axios
+              .get(url)
+              .then(function(response) {
+                console.log(response);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          },
           // https://blog.csdn.net/sky786905664/article/details/53079487
           // Synchronous XMLHttpRequest on the main thread is deprecated because of its detrimental effects to the end user's experience. 提示的处理
           xhr: function(params) {
             console.log(params);
             var method = "POST";
-            var url = "/report";
+            var url = this.url;
             var async = false; // 一定要同步，这样就能保证请求一定能发送到服务端，哪怕是网页关闭前
             var headers = {
               token: "hzy"
@@ -158,6 +178,9 @@
             xhr.open(method, url, async);
             // 不同域下的XmlHttpRequest 响应，不论其Access-Control- header 设置什么值，都无法为它自身站点设置cookie值，
             // 除非它在请求之前将withCredentials 设为true。
+            // 设置Credentialed，那么响应凭证请求时，服务器必须在Access-Control-Allow-Origin标头的值中指定原点，而不是指定“ *”通配符。
+            // 因为上面示例中的请求标头包含Cookie标头，所以如果Access-Control-Allow-Origin标头的值为“*” ，则请求将失败。
+            // 但它不会失败：因为Access-Control-Allow-Origin标题的值是“ http://foo.example”（实际原点）而不是“ *”通配符，所以凭证识别内容将返回到调用Web内容。
             xhr.withCredentials = true;
             // 设置header，是为了测试服务端取值操作
             Object.keys(headers).forEach(key => {

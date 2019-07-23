@@ -70,3 +70,4 @@ Web Fundamentals-性能-加载性能
    搜集了网页性能之后应该发送给服务器进行数据分析，这时候涉及到一个知识点：如何上报数据？
    https://www.jianshu.com/p/04e88271a8f2【使用sendBeacon进行前端数据上报】
    demo:test/sendBeacon
+   扩展资料：前端数据上报.md
