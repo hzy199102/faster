@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>requestAnimationFrame调研</title>
+    <script>
+      const observer = new PerformanceObserver(list => {
+        for (const entry of list.getEntries()) {
+          // `entry` is a PerformanceEntry instance.
+          console.log(entry);
+          console.log(entry.entryType);
+          console.log(entry.startTime); // DOMHighResTimeStamp
+          console.log(entry.duration); // DOMHighResTimeStamp
+        }
+      });
+
+      // Start observing the entry types you care about.
+      observer.observe({ entryTypes: ["resource", "paint"] });
+    </script>
+    <script
+      type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"
+    ></script>
+  </head>
+
+  <body>
+    <h1>requestAnimationFrame调研</h1>
+    <div id="ant" style="height: 2000px;"></div>
+    <script type="text/javascript">
+      window.onload = function() {
+        init();
+        // console.log(PerformanceObserver);
+        // rafTest1();
+        // 这个操作证明，同一时间下，如果同时调用2次window.requestAnimationFrame方法，它就会执行2次，但是如果只调用一次，那么即使在scroll这种高频度的监听操作下，最多也是60hz的更新频度
+        // $(window).scroll(e => {
+        //   window.requestAnimationFrame(timestamp => {
+        //     animation(timestamp);
+        //   });
+        //   // window.requestAnimationFrame(timestamp => {
+        //   //   animation(timestamp);
+        //   // });
+        // });
+      };
+      var init = function() {
+        for (let index = 0; index < 500; index++) {
+          $("#ant").html($("#ant").html() + "<br />" + index);
+        }
+      };
+
+      const animation = timestamp =>
+        console.log("animation called at", timestamp);
+
+      /**
+       * requestAnimationFrame API基本测试
+       *
+       */
+
+      var rafTest1 = function() {
+        var progress = 0;
+        //回调函数
+        function render() {
+          console.log(progress);
+          progress += 1; //修改图像的位置
+
+          if (progress < 100) {
+            //在动画没有结束前，递归渲染
+            window.requestAnimationFrame(render);
+          }
+        }
+
+        //第一帧渲染
+        window.requestAnimationFrame(render);
+      };
+    </script>
+    <script>
+      /***
+       * 开发者经常用来检测耗时较长任务的黑客手段
+       * 结合滚动scroll事件，就能很明显的看到效果
+       *
+       */
+
+      (function detectLongFrame() {
+        // console.log(1111);
+        var lastFrameTime = Date.now();
+        requestAnimationFrame(function() {
+          var currentFrameTime = Date.now();
+
+          if (currentFrameTime - lastFrameTime > 50) {
+            // Report long frame here...
+            console.log(1111);
+          }
+
+          detectLongFrame(currentFrameTime);
+        });
+      })();
+    </script>
+  </body>
+</html>

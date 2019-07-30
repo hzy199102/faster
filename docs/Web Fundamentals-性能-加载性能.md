@@ -71,3 +71,6 @@ Web Fundamentals-性能-加载性能
    https://www.jianshu.com/p/04e88271a8f2【使用sendBeacon进行前端数据上报】
    demo:test/sendBeacon
    扩展资料：前端数据上报.md
+   https://developers.google.com/web/tools/chrome-devtools/network/understanding-resource-timing?hl=zh-cn【了解资源计时】
+3. 以用户为中心的性能指标
+   这一块内容太过关键，有专门的文档讲述：以用户为中心的性能指标.md

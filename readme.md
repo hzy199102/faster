@@ -32,3 +32,4 @@ https://cloud.tencent.com/developer/article/1150960【腾讯是如何大幅降�
 9. 临时加入 ws server 测试工作
 10. 使用 settings sync 对多台设备的 vscode 配置进行同步
 11. 开始编写 demo:sendBeacon，前端数据上报
+12. requestAnimationFrame 深入调研

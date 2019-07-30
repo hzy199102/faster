@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      performance.mark("stylesheets start blocking");
+    </script>
+    <link rel="stylesheet" href="/sheet1.css" />
+    <link rel="stylesheet" href="/sheet4.css" />
+    <script>
+      performance.mark("stylesheets done blocking");
+    </script>
+  </head>
+  <body onload="init()">
+    <img id="image0" src="https://www.w3.org/Icons/w3c_main.png" />
+    <script>
+      function init() {
+        // see [[USER-TIMING-2]]
+        performance.mark("startWork");
+        doWork(); // Some developer code
+        performance.mark("endWork");
+        measurePerf();
+      }
+      function doWork() {
+        console.log("Some developer code");
+        // 睡眠1000ms
+        var start = new Date().getTime();
+
+        while (true) if (new Date().getTime() - start > 1000) break;
+      }
+      function measurePerf() {
+        performance
+          .getEntries()
+          .map(entry => JSON.stringify(entry, null, 2))
+          .forEach(json => console.log(json));
+      }
+    </script>
+  </body>
+</html>
