@@ -8,7 +8,8 @@ router.get("/", async ctx => {
   // };
   var data = [
     { serverType: 1, ipWAN: "10.1.77.73", portWAN: 6080 },
-    { serverType: 11, ipWAN: "10.1.77.73", portWAN: 6080 },
+    // { serverType: 11, ipWAN: "10.1.77.73", portWAN: 6080 },
+    { serverType: 11, ipWAN: "192.168.130.40", portWAN: 6080 },
     { serverType: 9, ipWAN: "file.glodon.com", portWAN: 80 }
   ];
   ctx.body = `callback(${JSON.stringify(data)})`;

@@ -5,7 +5,7 @@ var tool = require("./tool").tool;
 
 // 启动基于websocket的服务器,监听我们的客户端接入进来。
 var server = new ws.Server({
-  host: "10.1.77.73",
+  // host: "10.1.77.73",
   // host: "127.0.0.1",
   port: 6080,
   path: "/ws"
@@ -30,20 +30,24 @@ function websocket_add_listener(client_sock) {
   // 不会出现粘包的情况，send一次，就会把send的数据独立封包。
   // 如果我们是直接基于TCP，我们要自己实现类似于websocket封包协议就可以完全达到一样的效果；
   client_sock.on("message", function(data) {
-    var req = JSON.parse(data);
-    // console.log(req);
     var res = {
       msg: "响应有误"
     };
-    var functionName = "cmd_" + req.cmd;
-    if (tool[functionName]) {
-      res = tool[functionName](req);
-    } else {
-      var res = {
-        msg: `cmd: ${req.cmd}没有对应响应操作`
-      };
+    try {
+      var req = JSON.parse(data);
+      var functionName = "cmd_" + req.cmd;
+      if (tool[functionName]) {
+        res = tool[functionName](req);
+      } else {
+        var res = {
+          msg: `cmd: ${req.cmd}没有对应响应操作...`
+        };
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      client_sock.send(JSON.stringify(res));
     }
-    client_sock.send(JSON.stringify(res));
   });
   // end
 }
