@@ -1,0 +1,19 @@
+[ignore]
+.*/node_modules/.*
+# flow2/src/test1.js同时被包含和忽略，它最终会被忽略。
+# .*/flow2/src/test1.js
+# <PROJECT_ROOT>指的是.flowconfig文件所处的目录
+# <PROJECT_ROOT>/flow/src2/.*
+# src2目录下的任何文件或目录都将被忽略，无论是哪个目录下的src2，可能是一个层级，或者多个层级，都会被忽略。
+# .*/src2/.*
+<PROJECT_ROOT>/flow/src/.*
+[include]
+# 只有flow2会被包含
+# ./flow2/*.js
+[libs]
+
+[lints]
+
+[options]
+
+[strict]

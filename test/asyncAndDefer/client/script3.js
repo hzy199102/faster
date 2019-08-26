@@ -1,1 +1,1 @@
-console.log('script3')
+console.log("script3");

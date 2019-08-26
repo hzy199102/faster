@@ -12,5 +12,17 @@
     "sharp": "^0.22.1",
     "tinify": "^1.6.0-beta.2",
     "ws": "^7.1.0"
+  },
+  "scripts": {
+    "build_delflow": "babel flow/src/ -d flow/lib/",
+    "flow": "flow",
+    "flow_help": "flow --help",
+    "flow_stop": "flow stop"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-flow": "^7.0.0",
+    "flow-bin": "^0.105.2"
   }
 }

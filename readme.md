@@ -33,3 +33,10 @@ https://cloud.tencent.com/developer/article/1150960【腾讯是如何大幅降�
 10. 使用 settings sync 对多台设备的 vscode 配置进行同步
 11. 开始编写 demo:sendBeacon，前端数据上报
 12. requestAnimationFrame 深入调研
+13. nodejs 服务端部署完成，但是缺乏 ngnix 配置
+14. 对于 elementUI 的理解加深一步
+15. https://mp.weixin.qq.com/s/G21jKt1DBB1107k6eF7BHQ
+16. flow 深入调研
+    flow.md
+17. 如果运行命令，发现缺少 modules，而之前这个命令一直都是好好的，那说明安装其他 npm 包的时候影响了 node_module 的包结构，
+    已知的最好方法是删除 node_modules 文件夹，重新执行 cnpm install。
