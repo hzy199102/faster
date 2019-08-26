@@ -1,3 +1,4 @@
+学习资料：https://flow.org/en/docs/
 1. 入门(Getting Started)
    1. 设置一个编译器来去除 Flow 类型
       1. cnpm install --save-dev @babel/core @babel/cli @babel/preset-flow
