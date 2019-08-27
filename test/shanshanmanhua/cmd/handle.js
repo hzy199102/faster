@@ -1,16 +1,10 @@
 // 参考资料：https://blog.csdn.net/weixin_34319640/article/details/93164345
 const fs = require("fs");
-const path = require("path");
-
-const https = require("https");
-const { URL } = require("url");
-
 const { config } = require("../config");
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 
-console.log(config.ddmmcc);
-
+// 漫画目录页
 async function getData(url) {
   const html = await fetch(url).then(res => res.text());
   const $ = cheerio.load(html, { decodeEntities: false });
@@ -22,93 +16,104 @@ async function getData(url) {
   // 获取目录列表
   const list = [];
   function getVlue() {
-    console.log($(this).attr("title"));
-    console.log($(this).attr("href"));
-    // const href = `${baseUrl}${$(this)
-    //   .find("a")
-    //   .attr("href")}`;
-    // list.push({
-    //   href
-    // });
+    var key = $(this).attr("title");
+    var href = $(this).attr("href");
+    list.push({
+      key,
+      href
+    });
   }
   await $("#sort_div_p")
     .find("a")
     .map(getVlue);
+
+  return {
+    list,
+    title
+  };
 }
 
-getData(config.ddmmcc.data.tjjzf.url);
+// 漫画集页
+async function getData2(url) {
+  const html = await fetch(url).then(res => res.text());
+  // console.log(html);
+  var sFilesP = html.indexOf("sFiles=");
+  var sPathP = html.indexOf("sPath=");
+  var endP = html.indexOf(";</script>");
+  var sFiles = html.substr(sFilesP + 8, sPathP - sFilesP - 14);
+  var sPath = html.substr(sPathP + 7, endP - sPathP - 8);
+  // console.log(sFiles);
+  // console.log(sPath);
+  var sDS =
+    "http://20.94201314.net/dm01/|http://20.94201314.net/dm02/|http://20.94201314.net/dm03/|http://20.94201314.net/dm04/|http://20.94201314.net/dm05/|http://20.94201314.net/dm06/|http://20.94201314.net/dm07/|http://20.94201314.net/dm08/|http://20.94201314.net/dm09/|http://20.94201314.net/dm10/|http://20.94201314.net/dm11/|http://20.94201314.net/dm12/|http://20.94201314.net/dm13/|http://20.94201314.net/dm14/|http://20.94201314.net/dm15/|http://20.94201314.net/dm16/";
 
-// fileList(root);
+  var getDomain = function(sDS, sPath) {
+    arrDS = sDS.split("|");
+    var u = "";
+    for (i = 0; i < arrDS.length; i++) {
+      if (sPath == i + 1) {
+        u = arrDS[i];
+        break;
+      }
+    }
+    return u;
+  };
 
-// // 获取文件列表
-// function fileList(folder) {
-//   fs.readdir(folder, (err, files) => {
-//     if (err) console.error(err);
-//     files.forEach(file => {
-//       fileFilter(folder + file);
-//     });
-//   });
-// }
+  var sDomain = getDomain(sDS, sPath);
+  // console.log(sDomain);
 
-// // 过滤文件格式，返回所有jpg,png图片
-// function fileFilter(file) {
-//   fs.stat(file, (err, stats) => {
-//     if (err) return console.error(err);
-//     if (
-//       // 必须是文件，小于5MB，后缀 jpg||png
-//       stats.size <= max &&
-//       stats.isFile() &&
-//       exts.includes(path.extname(file))
-//     ) {
-//       fileUpload(file); // console.log('可以压缩：' + file);
-//     }
-//     if (stats.isDirectory()) fileList(file + "/");
-//   });
-// }
-// // 异步API,压缩图片
-// // {"error":"Bad request","message":"Request is invalid"}
-// // {"input": { "size": 887, "type": "image/png" },"output": { "size": 785, "type": "image/png", "width": 81, "height": 81, "ratio": 0.885, "url": "https://tinypng.com/web/output/7aztz90nq5p9545zch8gjzqg5ubdatd6" }}
-// function fileUpload(img) {
-//   var req = https.request(options, function(res) {
-//     res.on("data", buf => {
-//       let obj = JSON.parse(buf.toString());
-//       if (obj.error) {
-//         console.log(`[${img}]：压缩失败！报错：${obj.message}`);
-//       } else {
-//         fileUpdate(img, obj);
-//       }
-//     });
-//   });
+  var unsuan = function(s) {
+    var x = s.substring(s.length - 1);
+    var xi = "abcdefghijklmnopqrstuvwxyz".indexOf(x) + 1;
+    var sk = s.substring(s.length - xi - 12, s.length - xi - 1);
+    s = s.substring(0, s.length - xi - 12);
+    var k = sk.substring(0, sk.length - 1);
+    var f = sk.substring(sk.length - 1);
+    for (i = 0; i < k.length; i++) {
+      eval("s=s.replace(/" + k.substring(i, i + 1) + "/g,'" + i + "')");
+    }
+    var ss = s.split(f);
+    s = "";
+    for (i = 0; i < ss.length; i++) {
+      s += String.fromCharCode(ss[i]);
+    }
+    return s;
+  };
+  sFiles = unsuan(sFiles);
+  // console.log(sFiles);
+  var arrFiles = sFiles.split("|");
+  var sImgListStr = "";
 
-//   req.write(fs.readFileSync(img), "binary");
-//   req.on("error", e => {
-//     console.error(e);
-//   });
-//   req.end();
-// }
-// // 该方法被循环调用,请求图片数据
-// function fileUpdate(imgpath, obj) {
-//   let options = new URL(obj.output.url);
-//   let req = https.request(options, res => {
-//     let body = "";
-//     res.setEncoding("binary");
-//     res.on("data", function(data) {
-//       body += data;
-//     });
+  // for (i = 0; i < arrFiles.length; i++) {
+  //   if (sImgListStr == "")
+  //     sImgListStr = "{url:'" + sDomain + arrFiles[i] + "',caption:''}";
+  //   else sImgListStr += ",{url:'" + sDomain + arrFiles[i] + "',caption:''}";
+  // }
+  // sImgListStr = "var imglist = [" + sImgListStr + "];";
 
-//     res.on("end", function() {
-//       fs.writeFile(imgpath, body, "binary", err => {
-//         if (err) return console.error(err);
-//         console.log(
-//           `[${imgpath}] \n 压缩成功，原始大小-${obj.input.size}，压缩大小-${
-//             obj.output.size
-//           }，优化比例-${obj.output.ratio}`
-//         );
-//       });
-//     });
-//   });
-//   req.on("error", e => {
-//     console.error(e);
-//   });
-//   req.end();
-// }
+  for (i = 0; i < arrFiles.length; i++) {
+    if (sImgListStr == "") sImgListStr = "'" + sDomain + arrFiles[i] + "'";
+    else sImgListStr += ",'" + sDomain + arrFiles[i] + "'";
+  }
+  sImgListStr = "var imglist = [" + sImgListStr + "];";
+
+  eval(sImgListStr);
+  // console.log(imglist);
+  return imglist;
+}
+
+async function handle() {
+  var source = {};
+  // var main = await getData(config.ddmmcc.data.tjjzf.url);
+  var main = await getData(config.ddmmcc.data.jyjxs.url);
+  // console.log(list);
+  // list2 = await getData2("http://ddmmcc.com/vols/37742_347067/");
+  // console.log(list2);
+  for (var i = main.list.length - 1; i >= 0; i--) {
+    source[main.list[i].key] = await getData2(main.list[i].href);
+  }
+  console.log(1111);
+  console.log(source);
+  fs.writeFileSync(`../url/${main.title}.json`, JSON.stringify(source));
+}
+handle();
