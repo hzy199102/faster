@@ -1,5 +1,6 @@
 echarts 入坑史
 官网：https://www.echartsjs.com/gallery/editor.html?c=doc-example/tutorial-async
+https://echarts.apache.org/zh/tutorial.html#%E5%BC%82%E6%AD%A5%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E5%92%8C%E6%9B%B4%E6%96%B0
 
 1. 背景
    中台项目加入 echarts 功能
