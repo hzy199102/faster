@@ -1,5 +1,6 @@
 test/node_modules
 test/pic/server/upload
+test/pic/source/badge
 test/shanshanmanhua/source
 node_modules
 test/shanshanmanhua/url
