@@ -225,7 +225,7 @@
       promise的机制比想象中还要复杂，一个方法如果调用了await，那么这个方法在被其他方法调用的时候，仍会异步，这个还需要做更详尽的测试
    2. 问题反馈功能的vue版本提升
       问题反馈是3个月前的功能，$emit似乎从原来的同步变成异步，如果现在只适配qt，还不行，还得调整vue本身的同步异步问题，解决花费了些许时间，但是原理仍未知
-2. vue 核心（完成）（3.5）
+2. vue 核心（完成）（4）
    1. 学习了1.3   
       vue的构建过程，从package.json的命令，到scripts/build的实际配置处理，包括config.js的默认配置和转换成rollup支持的配置形式，处理cmd命令得到真正需要的配置，
       在到执行打包，压缩，输出日志等操作，最后还分析了Runtime Only VS Runtime+Compiler的区别
@@ -235,3 +235,4 @@
       new vue的时候发生了什么？首先就是_init,就是初始化options配置，这里学习的重点是在data中配置的属性为什么可以通过this.属性的方式调用，因为它在初始化的时候被赋值给了
       vue._data，然后通过proxy代理的方式，原理是Object.defineProperty 的 get 和 set，去实现，实际上this.属性就是this._data.属性，所以会和props和methods的属性进行去重
       判断，另外这里涉及的数据驱动后面会研究。另外还知道了通过alias的方式让vue的源码可以被debugger，这里涉及到1.3.3.6 Runtime Only VS Runtime+Compiler
+      另外这里还有个知识点，vue3.0时候的webpack配置。

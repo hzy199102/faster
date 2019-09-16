@@ -96,4 +96,17 @@ vue
       4. 这里涉及到 1.3.3.6 Runtime Only VS Runtime+Compiler（重点）的知识点，如果在 vue-cli 构建项目，想要 debugger 源码，就应该选择 Runtime+Compiler，这样配置文件
          build/webpack.base.conf.js 中就会出现
          alias: {'vue': 'vue/dist/vue.esm.js'}，也就是说 import vue 的时候，就会引入可以断点的非压缩源码。
-         当时在 vue3.0 中，已经没有这样的选择，直接配置 alias 就是了，不过项目体积会大 30%
+         当时在 vue3.0 中，已经没有这样的选择，直接配置 alias 就是了，不过项目体积会大 30%，而且这个配置是很有技巧的，需要在根路径加入 vue.config.js，输入如下代码：
+         const path = require("path");
+         function resolve(dir) {
+         return path.join(\_\_dirname, dir);
+         }
+         module.exports = {
+         lintOnSave: true,
+         chainWebpack: config => {
+         config.resolve.alias
+         .set("vueesm", resolve("node_modules/vue/dist/vue.esm.js"))
+         }
+         };
+         查找 node_modules 中 vue 的 package.json,看"module": "dist/vue.runtime.esm.js",说明 vue 使用的是这个入口，但是我们配置了 alias，然后引用 import vue from 'vueesm';
+         那么就可以在这个入口观察 vue 了。
