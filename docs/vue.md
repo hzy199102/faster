@@ -1,5 +1,10 @@
 vue
 
+0. 跳过的需要看文档的内容
+
+   1. performance， mark
+      这个是 vue 在卡顿的情况下进行性能分析的操作。
+
 1. 准备工作
 
    1. 认识 flow
@@ -83,7 +88,7 @@ vue
             1. 在 instance/index 里找到 vue 的定义，通过 minxin 去挂载原型方法
             2. 在 core/index 里找到 initGlobalAPI，给 vue 挂载静态方法
 
-2. 数据驱动
+1. 数据驱动
    1. new Vue 发生了什么
       当我们在 vue 的 template 中定义一个变量{{message}}的时候，vue 是怎么把它渲染到 html 中的？
       1. vue 是个 function 实现的 class，所以执行 new Vue 的时候先进入 instance/index，执行 this.\_init(options)
@@ -110,3 +115,23 @@ vue
          };
          查找 node_modules 中 vue 的 package.json,看"module": "dist/vue.runtime.esm.js",说明 vue 使用的是这个入口，但是我们配置了 alias，然后引用 import vue from 'vueesm';
          那么就可以在这个入口观察 vue 了。
+         根据 scripts/build.js 中的 config.js，确认 vue.runtime.esm.js 的入口文件是 web/entry-runtime.js，而 vue.esm.js 的入口文件是 web/entry-runtime-with-compiler.js，所以我们后期看的文件是 entry-runtime-with-compiler.js
+   2. Vue 实例挂载的实现
+      1. \$mount 的具体实现
+         1. 找到 el，并且它不能是 html 或者 body，因为它会替换里面的内容，即替换 html 或者 body
+         2. 使用 entry-runtime-with-compiler.js，则即使没有在 vue 的初始化时传入 options.render，也没关系，它会编译，因为它重写了$mount，加入了没有 render 时候对 template 的编译转换成 render 的操作，
+            但是 entry-runtime.js 的\$mount 则必须制定 render 函数，这就是 1.3.3.6 二者的具体区别表现形式！
+         3. 接着它会调用 runtime/index.js 的\$mount，相当于复用，核心是 core/instance/lifecycle.js 的 mountComponent，它先判断 render 函数是否存在，接着声明 updateComponent 函数，
+            updateComponent = () => {vm.\_update(vm.\_render(), hydrating)}，\_render 会生成 vnode，接着\_update 会进行 vnode 挂载，这个函数会作为 observer/Watcher 类的初始化参数，
+            （注意 watcher 有很多种，这个是 isRenderWatcher，渲染 watcher！），被定义到 watcher.getter 中，并且会在初始化时候就被执行一次，这样就实现了真实渲染，除了首次渲染，之后更新数据的时候，还会执行 updateComponent 函数。
+   3. \_render 方法的实现
+      1. \_render 是 vue 原型方法，在 instance/index.js 中通过 renderMixin(Vue)绑定，实际实现在 core/instance/render.js
+      2. \_render 中 vm.\$createElement 是在 initRender 方法中实现，而 initRender 方法是在 instance/index.js 中通过 initMixin(Vue)去调用实现的
+      3. initRender 方法 vm.\_c 和 vm.$createElement的区别？
+         一个是编译render，一个是手写render
+         _render方法中对render的执行：vnode = render.call(vm._renderProxy, vm.$createElement)；
+         说明 options.render 函数接受的参数只有 vm.$createElement方法（vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)）,这里的 createElement 来自 vdom/create-element，会生成一个 vnode，在 demo 中我简单的传入了 tag，data,children 去测试了 render 函数，我发现如果使用 render 函数而非 template，那么就少了替换模板内容的过程，如果在 initdata 进行断点，会发现 template 会先出现模板内容，在 updateComponent 的时候替换成实际内容，而 render 函数是直接呈现实际内容的。
+      4. \_renderProxy 是什么?
+         \_renderProxy 同 2.3.2，也是通过 initMixin(Vue)去调用实现的，在 core/instance/init.js 中，这里的 initProxy 方法涉及到 es6 的 Proxy（知识点），对象访问的劫持。
+         如果浏览器支持 Proxy，那么在开发环境会创建一个相关对象，目的是：如果请求了未定义的属性，会出现错误警告，比如 data 中定义了 message，但是 template 中使用的是 message2，那么对象访问劫持，就会判断出这个属性未被定义，就出现相应警告。
+      5. 总结起来\_render 方法就是为了生成 vnode
