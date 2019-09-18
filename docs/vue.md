@@ -89,6 +89,7 @@ vue
             2. 在 core/index 里找到 initGlobalAPI，给 vue 挂载静态方法
 
 1. 数据驱动
+
    1. new Vue 发生了什么
       当我们在 vue 的 template 中定义一个变量{{message}}的时候，vue 是怎么把它渲染到 html 中的？
       1. vue 是个 function 实现的 class，所以执行 new Vue 的时候先进入 instance/index，执行 this.\_init(options)
@@ -128,10 +129,25 @@ vue
       1. \_render 是 vue 原型方法，在 instance/index.js 中通过 renderMixin(Vue)绑定，实际实现在 core/instance/render.js
       2. \_render 中 vm.\$createElement 是在 initRender 方法中实现，而 initRender 方法是在 instance/index.js 中通过 initMixin(Vue)去调用实现的
       3. initRender 方法 vm.\_c 和 vm.$createElement的区别？
-         一个是编译render，一个是手写render
+         一个是模板编译render，一个是手写render,这个在2.5 createElement 方法会提到
          _render方法中对render的执行：vnode = render.call(vm._renderProxy, vm.$createElement)；
          说明 options.render 函数接受的参数只有 vm.$createElement方法（vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)）,这里的 createElement 来自 vdom/create-element，会生成一个 vnode，在 demo 中我简单的传入了 tag，data,children 去测试了 render 函数，我发现如果使用 render 函数而非 template，那么就少了替换模板内容的过程，如果在 initdata 进行断点，会发现 template 会先出现模板内容，在 updateComponent 的时候替换成实际内容，而 render 函数是直接呈现实际内容的。
       4. \_renderProxy 是什么?
          \_renderProxy 同 2.3.2，也是通过 initMixin(Vue)去调用实现的，在 core/instance/init.js 中，这里的 initProxy 方法涉及到 es6 的 Proxy（知识点），对象访问的劫持。
          如果浏览器支持 Proxy，那么在开发环境会创建一个相关对象，目的是：如果请求了未定义的属性，会出现错误警告，比如 data 中定义了 message，但是 template 中使用的是 message2，那么对象访问劫持，就会判断出这个属性未被定义，就出现相应警告。
       5. 总结起来\_render 方法就是为了生成 vnode
+   4. Virtual DOM
+      真正的 DOM 元素是非常庞大的，因为浏览器的标准就把 DOM 设计的非常复杂。当我们频繁的去做 DOM 更新，会产生一定的性能问题。而 Virtual DOM 就是用一个原生的 JS 对象去描述一个 DOM 节点，所以它比创建一个 DOM 的代价要小很多。
+      vue 没有基于 react，而是基于 snabbdom（https://github.com/snabbdom/snabbdom）
+   5. createElement 方法的实现
+
+      1. createElement 来自 vdom/create-element
+      2. createElement 首先进行参数处理，因为是数组参数，而非对象参数，所以一旦漏传中间参数处理起来就很麻烦，所以专门加入一些形参处理，中间有参数漏传，则后面的参数依次补上
+      3. children 的一位数组化处理：normalizeChildren 和 simpleNormalizeChildren
+         由于 Virtual DOM 实际上是一个树状结构，每一个 VNode 可能会有若干个子节点，这些子节点应该也是 VNode 的类型。\_createElement 接收的第 4 个参数 children 是任意类型的，因此我们需要把它们规范成 VNode 类型。
+         simpleNormalizeChildren 方法调用场景是 render 函数当函数是编译生成的。理论上编译生成的 children 都已经是 VNode 类型的，但这里有一个例外，就是 functional component 函数式组件返回的是一个数组而不是一个根节点，所以会通过 Array.prototype.concat 方法把整个 children 数组打平，让它的深度只有一层。
+         normalizeChildren 方法的调用场景有 2 种，一个场景是 render 函数是用户手写的，当 children 只有一个节点的时候，Vue.js 从接口层面允许用户把 children 写成基础类型用来创建单个简单的文本节点，这种情况会调用 createTextVNode 创建一个文本节点的 VNode；另一个场景是当编译 slot、v-for 的时候会产生嵌套数组的情况，会调用 normalizeArrayChildren 方法，
+
+         这就是 vm.\_c 和 vm.$createElement的区别，vm.\_c是模板编译render，所以children已经被自动转为最多2层的数组，可以直接使用Array.prototype.concat.apply([], children)进行一维数组化操作，即使这样，vue也做了优化，必须Array.isArray(children[i])，才进行这样的操作。而vm.$createElement 是手写 render，vue 不确认它是几层，所以要 normalizeArrayChildren 进行更加复杂的操作去进行一维数组化操作，这里有 2 个知识点，第一：递归，在存在 children，是多层的情况下，第二：如果 2 个紧挨的元素，特别是父节点和子节点的第一个元素都是 textnode 的情况下，要进行合并，这是性能优化的细节。
+
+      4. 创建 vnode，tag 可以是 string，包括 html 原生标签，也可以是 component 组件，但无论如何，它会以不同的 tag 情况，创建对应的 vode，然后返回 vnode，这样\_render 就生成了 vnode。

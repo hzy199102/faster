@@ -221,18 +221,65 @@
 2019-09-16
 
 1. 土建容器升级（完成）（5）
-   1. 优化了QT升级的机制，可以全产品线适配，并且适配操作简单了
-      promise的机制比想象中还要复杂，一个方法如果调用了await，那么这个方法在被其他方法调用的时候，仍会异步，这个还需要做更详尽的测试
-   2. 问题反馈功能的vue版本提升
-      问题反馈是3个月前的功能，$emit似乎从原来的同步变成异步，如果现在只适配qt，还不行，还得调整vue本身的同步异步问题，解决花费了些许时间，但是原理仍未知
+   1. 优化了 QT 升级的机制，可以全产品线适配，并且适配操作简单了
+      promise 的机制比想象中还要复杂，一个方法如果调用了 await，那么这个方法在被其他方法调用的时候，仍会异步，这个还需要做更详尽的测试
+   2. 问题反馈功能的 vue 版本提升
+      问题反馈是 3 个月前的功能，\$emit 似乎从原来的同步变成异步，如果现在只适配 qt，还不行，还得调整 vue 本身的同步异步问题，解决花费了些许时间，但是原理仍未知
 2. vue 核心（完成）（4）
-   1. 学习了1.3   
-      vue的构建过程，从package.json的命令，到scripts/build的实际配置处理，包括config.js的默认配置和转换成rollup支持的配置形式，处理cmd命令得到真正需要的配置，
-      在到执行打包，压缩，输出日志等操作，最后还分析了Runtime Only VS Runtime+Compiler的区别
-   2. 学习了1.4
-      import vue这个入口vue到底做什么时候事情，它实际上是个function构造的类，用es5的形式实现是为了方便原型挂载方法，另外它会做了静态方法的挂载，所以我们才能使用vue的方法
-   3. 学习了2.1
-      new vue的时候发生了什么？首先就是_init,就是初始化options配置，这里学习的重点是在data中配置的属性为什么可以通过this.属性的方式调用，因为它在初始化的时候被赋值给了
-      vue._data，然后通过proxy代理的方式，原理是Object.defineProperty 的 get 和 set，去实现，实际上this.属性就是this._data.属性，所以会和props和methods的属性进行去重
-      判断，另外这里涉及的数据驱动后面会研究。另外还知道了通过alias的方式让vue的源码可以被debugger，这里涉及到1.3.3.6 Runtime Only VS Runtime+Compiler
-      另外这里还有个知识点，vue3.0时候的webpack配置。
+   1. 学习了 1.3  
+      vue 的构建过程，从 package.json 的命令，到 scripts/build 的实际配置处理，包括 config.js 的默认配置和转换成 rollup 支持的配置形式，处理 cmd 命令得到真正需要的配置，
+      在到执行打包，压缩，输出日志等操作，最后还分析了 Runtime Only VS Runtime+Compiler 的区别
+   2. 学习了 1.4
+      import vue 这个入口 vue 到底做什么时候事情，它实际上是个 function 构造的类，用 es5 的形式实现是为了方便原型挂载方法，另外它会做了静态方法的挂载，所以我们才能使用 vue 的方法
+   3. 学习了 2.1
+      new vue 的时候发生了什么？首先就是\_init,就是初始化 options 配置，这里学习的重点是在 data 中配置的属性为什么可以通过 this.属性的方式调用，因为它在初始化的时候被赋值给了
+      vue.\_data，然后通过 proxy 代理的方式，原理是 Object.defineProperty 的 get 和 set，去实现，实际上 this.属性就是 this.\_data.属性，所以会和 props 和 methods 的属性进行去重
+      判断，另外这里涉及的数据驱动后面会研究。另外还知道了通过 alias 的方式让 vue 的源码可以被 debugger，这里涉及到 1.3.3.6 Runtime Only VS Runtime+Compiler
+      另外这里还有个知识点，vue3.0 时候的 webpack 配置。
+
+2019-09-17
+
+1. 气象站
+   1. 合并代码结构
+   2. 登录页面
+2. 土建 QT 升级 BUG 修复
+   1. 用户切换，但是数据我是缓存的，切换时候没更新导致的数据问题
+   2. 不同 vue 组件同时监听数据的变化，因为是异步的，所以处理逻辑顺利会出现错误
+
+2019-09-18
+
+1. 装饰勋章
+   1. 动画效果
+   2. 实时更新勋章信息
+   3. 修复异步问题导致的token没有及时放在请求头中的问题
+      这个只是暂时解决，应该有个统一的解决方案，放在框架中。
+2. 气象站
+   1. model 替换成公共库的 model，并进行功能适配
+   2. 表格 mock 逻辑调整，加入 formatter
+   3. 表单制作成公共组件
+3. 其他紧急任务
+   1. 土建PC网页不是最新网页，缓存没更新问题
+      这个问题在很多PC都有出现，需要想一个方案强制更新网页，刷新缓存
+   2. 修复装饰签到信息同步问题
+      以前的代码没有模块化概念，交互起来特别繁琐。
+   3. 之前装饰PC的全部项目性能都有问题，this.eventHub.$on（全局事件线）绑定在子组件的时候，在destroyed上没有解除，导致初始化一次子组件就全局多加个事件操作
+   4. 父组件和子组件created执行顺序居然是异步的，之后的编程一定要注意这个问题
+5. qt升级方案以及遇到的问题汇总
+   1. 新版本的qt无法在调试窗口进行代码调试，之前可以用firebug解决，但是firebug现在被火狐官方终止维护，也就是没有解决办法了。
+   2. 新版本qt容器初始化由同步变为异步，并且容器对外暴露的接口分三种类型：
+      1. 获取容器数据的接口
+         比如'isLogin', 'getToken', 'getWindowSysName', 'isSystem64Bit', 'getVersion', 'getProductName', 'isSoftware64Bit', 'getDeviceNum', 'getCurrentUser'
+         这类接口是异步获取数据
+      2. 调用容器工具的接口
+         比如'login', 'logout', 'loadUrlInBrowser', 'refreshNaviWidget', 'destroyWebWindow', 'showWebWindow', 'hideWebWindow', 'existWebWindow', 'updateWebWindow', 'showNaviWidget', 'popupWebWindow'
+         这类接口是同步操作
+      3. 容器通讯的接口
+         'registerCallBack', 'notify'
+         这类接口是注册监听和触发监听的接口，也是同步
+      为了兼容旧版本，也就是全部的方法都是同步操作，必须提供一个新的代理容器，可以转异步为同步，使用了promise，async,awiat登ES6的新特性做到了
+   3. 以为所有的网页（超过10个）都要进行类似qt升级，为了以最小的改动达到最好的效果，采用了中间件方式，穷举所有容器，所有方法进行处理，有则定义，无则跳过。
+   4. 因为获得容器数据的接口从异步转同步用到了缓存，所以在切换用户的时候，缓存要及时更新，因为这个问题导致了一些列数据问题
+   5. 因为使用了await和async，所以vue父子组件生命周期的运行出现了紊乱，本来父组件created方法先于子组件，但是因为父组件用到了es6的await和async，导致子组件的created先于父组件运行，
+      暂时没有很好的解决方案，只能根据业务代码的情况加入了settimeout延迟500毫秒的操作，这也是qt升级最大的障碍。但是，详解vue中async-await的使用误区（https://www.jb51.net/article/152027.htm)一文似乎有解决方案，可以事后完善。
+4. vue 核心
+
