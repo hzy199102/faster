@@ -151,3 +151,56 @@ vue
          这就是 vm.\_c 和 vm.$createElement的区别，vm.\_c是模板编译render，所以children已经被自动转为最多2层的数组，可以直接使用Array.prototype.concat.apply([], children)进行一维数组化操作，即使这样，vue也做了优化，必须Array.isArray(children[i])，才进行这样的操作。而vm.$createElement 是手写 render，vue 不确认它是几层，所以要 normalizeArrayChildren 进行更加复杂的操作去进行一维数组化操作，这里有 2 个知识点，第一：递归，在存在 children，是多层的情况下，第二：如果 2 个紧挨的元素，特别是父节点和子节点的第一个元素都是 textnode 的情况下，要进行合并，这是性能优化的细节。
 
       4. 创建 vnode，tag 可以是 string，包括 html 原生标签，也可以是 component 组件，但无论如何，它会以不同的 tag 情况，创建对应的 vode，然后返回 vnode，这样\_render 就生成了 vnode。
+
+   6. update
+      非常复杂，必须 debugger 看一遍过程
+
+      1. [_update] 来自 [core/instance/lifecycle]，在初始化和数据改变 2 种情况下会被调用。
+      2. [_update]的核心方法是[__patch__]，它被定义在[platforms/web/runtime/pacth.js]，通过[core/vdom/patch.js]下的[createPatchFunction]方法返回 function 初始化
+         [export const patch: Function = createPatchFunction({ nodeOps, modules })]，有点像 react 的高阶函数。[nodeOps]都是 web 实际 dom 操作的方法，
+      3. 实际的[patch]方法，核心参数 4 个，[oldVnode, vnode, hydrating, removeOnly]，调用如下：[vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)]
+         会把真实的[el]转变成[vnode]，而且真实的[el]会挂载在[vnode.elm]上，通过代码[new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)]实现，
+         因为[el]在初始化的时候一定是真实的 dom 元素，而在数据更新的时候才会使用[vnode],接着会调用[createElm]方法，作用是把[vnode]挂载在真实的[dom]上，核心 4 个参数，[vnode,insertedVnodeQueue,
+         parentElm,refElm,]，分别对应[vnode]，空的数组，[el]的父节点（比如 div 的父节点 body），[nodeOps.nextSibling(oldElm)]，
+         （这里为什么要传入[el]的父节点以及[el]的下一个兄弟节点呢？
+         其实是为了在真实 dom 插入的时候准确定位插入的位置，如果[el]已经是父节点的最后一个节点，直接插入，如果后面还有兄弟节点，一定要插入在兄弟节点的前面！）
+         [createElm]会对[tag]做检测，看是否合法，有时候组件没被注册这里就会提示错误，
+         接着会生成[vnode]的[vnode.elm]，就是[vnode]的真实 dom，这个就是要真实挂载的 dom，
+         接着会找到[vnode]下的[children]，递归执行[createElm]，但是切记，从里往外插入，最终才是把[vnode]的真实节点进行挂载。
+      4. 因为新创建了一个 dom 并且进行了挂载，那就必须把原来的 dom 元素删除。当然这个是经过[isDef]判断的，否则可能只是单纯修正原来 dom 的值，不会做这个替换操作。
+      5. 在[platforms/web/entry-runtime-with-compiler.js]中重定义[$mount]，这时候会确认[el]，以及将[template]转成[render]，接着[mount.call(this, el, hydrating)]会调用原始的[$mount]，
+         而它被定义在[platforms/web/runtime/index.js]中，这里会确认[__patch__]
+         （patch 是平台相关的，在 Web 和 Weex 环境，它们把虚拟 DOM 映射到 “平台 DOM” 的方法是不同的，并且对 “DOM” 包括的属性模块创建和更新也不尽相同。因此每个平台都有各自的 nodeOps 和 modules，
+         它们的代码需要托管在 src/platforms 这个大目录下。而不同平台的 patch 的主要逻辑部分是相同的，所以这部分公共的部分托管在 core 这个大目录下。差异化部分只需要通过参数来区别，
+         这里用到了一个函数柯里化的技巧，通过 createPatchFunction 把差异化参数提前固化，这样不用每次调用 patch 的时候都传递 nodeOps 和 modules 了，利用闭包的方法让 patch 实现了对 nodeOps 和 modules 的持有，
+         这种编程技巧也非常值得学习。），
+         在[$mount]中会调用定义在[core/instance/lifecycle.js]的[mountComponent]方法，它会[el]绑定[vm.$el = el]，并且生成[updateComponent]函数
+         [updateComponent = () => { vm._update(vm._render(), hydrating) }]，将它作为参数传入[Watcher]，这样就实现了在初始化和数据改变 2 种情况下会被调用（watch 在 2.1.2.3 有详细介绍），[_update]
+      6. [_update]核心是[__patch__]，用到了函数柯里化，会在初始化的时候将真实的[el]（也成为挂载节点）转成[vnode]，并将[_render]转换出的[vnode]调用[createElm]方法进行真实 dom 的生成，
+         这里还会处理他的 children，接着挂载，并且经过[isDef]判断，把原来的 dom 元素删除。
+
+   7. 数据驱动总结
+      [new vue()] => [init] => [$mount] => [complie] => [render] => [vnode] => [patch] => [DOM]
+
+1. 组件化
+   1. 组件化概念
+   2. createComponent
+      1. [core/vdom/create-element.js]中的[createElement]根据[tag]判断用什么方式创建[vnode]，如果是组件创建，那么使用[core/vdom/create-component.js]中的[createComponent]，
+      2. [createComponent]中[const baseCtor = context.$options._base]，首先[core/global-api/index.js]中的[initGlobalAPI]方法调用[Vue.options._base = Vue]，而在[core/instance/init.js]中的[_init]
+         方法会将[new Vue(Options)]中的[options]通过[initInternalComponent]方法（它的内部实现比动态枚举快，faster than dynamic enumeration.）合并到[vm.$options]上，所以[baseCtor]就是[Vue]
+      3. [Ctor = baseCtor.extend(Ctor)]就是让[Ctor]变成新的构造器，在[core/global-api/extend.js]的[extend]类方法上，首先会对[name](就是vue文件中的name属性)做[validateComponentName]校验，实现是在
+         [core/util/options.js]上，主要是不能和 html 标签有冲突，常见的如 header。接着定义[sub]，一个子的构造函数，[Sub.prototype = Object.create(Super.prototype), Sub.prototype.constructor = Sub]，
+         经典的原型继承，这样就能使用[Vue]的原型方法，比如[_init]，接着[Sub.options = mergeOptions(Super.options,extendOptions)]，会把组件的参数和[Vue.options]上的做合并
+         （注意，这里指的不是[new Vue(Options)]中的[options]！是[Vue]类上本身挂载的[options]），并用[super]指向[Vue]，接着处理下[Sub.options.props]和[Sub.options.computed](##这里面有优化的手段，可深入)
+         接着把[Vue]的类方法(静态方法)全部赋值到[sub]上，目的是让[sub]拥有和[Vue]一样的能力，接着缓存下来这个[sub]对象，避免多次执行 Vue.extend 的时候对同一个子组件重复构造。
+      4. 创建完构造器之后，异步组件处理，data 处理，比如 options 的重新计算，防止全局 mixin 对其的影响，v-model 的判断，props 处理，函数组件的处理，自定义事件处理，抽象组件处理，这些通通略过
+      5. [installComponentHooks]安装组件的钩子，[patch]过程中，执行不同的阶段会处理不同阶段的钩子，[componentVNodeHooks]包括 4 个钩子函数[init],[prepatch],[insert],[destroy],而在与[vnode.data.hook]
+         的合并策略是先执行[componentVNodeHooks]的钩子函数，在执行[vnode.data.hook]定义的函数
+      6. 实例化[vnode],注意组件实例化成[vnode]传递参数的不同点。组件是没有[children]，但是有[componentOptions]，这里面的[children]一般就是[slot]
+      7. 总结起来就是三部分，生成组件构造器，并且继承于[Vue]，有它的原型方法以及类方法，接着安装组件钩子函数，最后实例化 vnode。
+   3. 组件 patch
+      1. 目标
+         1. 了解组件 patch 的整体流程
+         2. 了解组件 patch 流程中的 activeInstance,vm.\$vnode,vm.\_vnode
+         3. 了解嵌套组件的插入顺序
+      2. [core/vdom/patch.js]中的[createElm]的[createComponent(vnode, insertedVnodeQueue, parentElm, refElm)]
