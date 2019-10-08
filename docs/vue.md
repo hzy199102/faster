@@ -204,3 +204,4 @@ vue
          2. 了解组件 patch 流程中的 activeInstance,vm.\$vnode,vm.\_vnode
          3. 了解嵌套组件的插入顺序
       2. [core/vdom/patch.js]中的[createElm]的[createComponent(vnode, insertedVnodeQueue, parentElm, refElm)]
+      3. 111
