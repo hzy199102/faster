@@ -207,61 +207,57 @@ vue
    4. 配置合并
       1. 了解外部调用场景的配置合并
       2. 了解组件场景的配置合并
-      3. 这里介绍vue合并配置（mergeOptions）的流程
-         1. 来自Vue.mixin的mergeOptions
-            这个可以在Call stack里看到来自Vue.mixin
-            parent就是Vue.options,包括components,directives,filters,_base,其中_base在子组件extends里用到，剩下3个是initGlobalAPI的时候得到
+      3. 这里介绍 vue 合并配置（mergeOptions）的流程
+         1. 来自 Vue.mixin 的 mergeOptions
+            这个可以在 Call stack 里看到来自 Vue.mixin
+            parent 就是 Vue.options,包括 components,directives,filters,\_base,其中\_base 在子组件 extends 里用到，剩下 3 个是 initGlobalAPI 的时候得到
             Vue.options = Object.create(null)
             ASSET_TYPES.forEach(type => {
-               Vue.options[type + 's'] = Object.create(null)
+            Vue.options[type + 's'] = Object.create(null)
             })
-            child就是mixin的参数
+            child 就是 mixin 的参数
             {
-               created() {
-                  console.log("parent created");
-               }
+            created() {
+            console.log("parent created");
             }
-            合并策略strats在util/options.js中有定义，不同类型的key对应不同的合并策略，created的合并策略是生成数组方法，先父后子。
-            合并完成,Vue.options上会多相关key-value（created）
-         2. 来自new Vue()的Vue.init
-            这个可以在Call stack里看到来自new Vue()
-            因为不是组件，所以会走非组件的mergeOptions
-            parent就是Vue.options，但此时它经过Vue.mixix的mergeOptions，已经多了一些新的key-value（created）
-            child就是new Vue()里面的参数
+            }
+            合并策略 strats 在 util/options.js 中有定义，不同类型的 key 对应不同的合并策略，created 的合并策略是生成数组方法，先父后子。
+            合并完成,Vue.options 上会多相关 key-value（created）
+         2. 来自 new Vue()的 Vue.init
+            这个可以在 Call stack 里看到来自 new Vue()
+            因为不是组件，所以会走非组件的 mergeOptions
+            parent 就是 Vue.options，但此时它经过 Vue.mixix 的 mergeOptions，已经多了一些新的 key-value（created）
+            child 就是 new Vue()里面的参数
             {
-               el: "#app",
-               render: h => h(childComp)
+            el: "#app",
+            render: h => h(childComp)
             }
-            合并完成就是options又多了2个key-value，但注意在Vue.options上没这2个key-value
-         3. 来自Vue.extend的mergeOptions
-            这个可以在Call stack里看到来自Vue.extend
-            因为包含childComp子组件，所以在创建这个子组件的构造函数的时候，会进行合并配置的操作
-            parent就是Vue.options，但此时它经过Vue.mixix的mergeOptions，已经多了一些新的key-value（created）
-            child就是childComp的对象
+            合并完成就是 options 又多了 2 个 key-value，但注意在 Vue.options 上没这 2 个 key-value
+         3. 来自 Vue.extend 的 mergeOptions
+            这个可以在 Call stack 里看到来自 Vue.extend
+            因为包含 childComp 子组件，所以在创建这个子组件的构造函数的时候，会进行合并配置的操作
+            parent 就是 Vue.options，但此时它经过 Vue.mixix 的 mergeOptions，已经多了一些新的 key-value（created）
+            child 就是 childComp 的对象
             {
-               template: "<div>{{msg}}</div>",
-               created() {
-                  console.log("child created");
-               },
-               mounted() {
-                  console.log("child mounted");
-               },
-               data() {
-                  return {
-                     msg: "Hello Vue"
-                  };
-               }
-            }
-            合并完成就是options又多了2个key-value，但注意在Vue.options上没这这些key-value
-         4. 来自VueComponent（子组件）的Vue.init
-            这个可以在Call stack里看到来自
-            var Sub = function VueComponent (options) {
-               this._init(options);
+            template: "<div>{{msg}}</div>",
+            created() {
+            console.log("child created");
+            },
+            mounted() {
+            console.log("child mounted");
+            },
+            data() {
+            return {
+            msg: "Hello Vue"
             };
-            因为它是组件，所以initInternalComponent方法合并配置
-            没有合并策略strats，也没有递归，知识简单的对象赋值，注意vm.$options此时_proto_原型链上会有Vue.options的属性
+            }
+            }
+            合并完成就是 options 又多了 2 个 key-value，但注意在 Vue.options 上没这这些 key-value
+         4. 来自 VueComponent（子组件）的 Vue.init
+            这个可以在 Call stack 里看到来自
+            var Sub = function VueComponent (options) {
+            this.*init(options);
+            };
+            因为它是组件，所以 initInternalComponent 方法合并配置
+            没有合并策略 strats，也没有递归，知识简单的对象赋值，注意 vm.\$options 此时\_proto*原型链上会有 Vue.options 的属性
             合并完成
-            
-
-
-
