@@ -261,3 +261,140 @@ vue
             因为它是组件，所以 initInternalComponent 方法合并配置
             没有合并策略 strats，也没有递归，知识简单的对象赋值，注意 vm.\$options 此时\_proto*原型链上会有 Vue.options 的属性
             合并完成
+   5. 生命周期
+      1. callHook
+         [src/core/instance/lifecycle]的callHook，最终执行生命周期的函数都是调用它，vm.$options[hook]在合并配置提到，包含生命周期函数的数组函数，因为数组函数是从父到子，
+         所以调用顺序也是从父到子。
+      1. beforeCreated,created
+         [src/core/instance/init]
+         vm._self = vm
+         initLifecycle(vm)
+         initEvents(vm)
+         initRender(vm)
+         callHook(vm, 'beforeCreate')
+         initInjections(vm) // resolve injections before data/props
+         initState(vm)
+         initProvide(vm) // resolve provide after data/props
+         callHook(vm, 'created')
+         可以看到 beforeCreate 和 created 的钩子调用是在 initState 的前后，initState 的作用是初始化 props、data、methods、watch、computed 等属性，之后我们会详细分析。
+         那么显然 beforeCreate 的钩子函数中就不能获取到 props、data 中定义的值，也不能调用 methods 中定义的函数。
+         在这俩个钩子函数执行的时候，并没有渲染 DOM，所以我们也不能够访问 DOM，一般来说，如果组件在加载的时候需要和后端有交互，放在这俩个钩子函数执行都可以，
+         如果是需要访问 props、data 等数据的话，就需要使用 created 钩子函数。之后我们会介绍 vue-router 和 vuex 的时候会发现它们都混合了 beforeCreatd 钩子函数。
+      2. beforeMount,mounted
+         [src/core/instance/lifecycle]的[mountComponent]，在执行 vm._render() 函数渲染 VNode 之前，执行了 [beforeMount] 钩子函数。[先父后子]
+         执行mounted有2处地方，[mountComponent]，vm.$vnode 如果为 null，即父亲vnode不存在，则表明这不是一次组件的初始化过程，而是我们通过外部 new Vue 初始化过程。
+         组件的mounted：[src/core/vnode/pacth]的[pacth]，组件的 VNode patch 到 DOM 后，会执行 [invokeInsertHook] 函数，把 [insertedVnodeQueue] 里保存的钩子函数依次执行一遍。
+         [insertedVnodeQueue]是在[patch]中不断添加的，在[createElm]方法中调用[invokeCreateHooks]，是一个插入途径；[createComponent]，递归方式不断初始化和patch子组件，
+         当子组件都patch完成，会执行[initComponent]方法，调用[invokeCreateHooks]，也是一个插入途径，所以是先子后父的过程。
+         执行 [insert] 这个钩子函数，对于组件而言，insert 钩子函数的定义在 [src/core/vdom/create-component] 中的 [componentVNodeHooks] 中的[insert]：
+         if (!componentInstance._isMounted) {
+            componentInstance._isMounted = true
+            callHook(componentInstance, 'mounted')
+         }
+         注意只有没有进行[mounted]的组件首次渲染，才会触发一次[mounted]，[先子后父]
+      3. beforeUpdate,updated
+         [src/core/instance/lifecycle]的[mountComponent],
+         new Watcher(vm, updateComponent, noop, {
+            before () {
+               if (vm._isMounted && !vm._isDestroyed) {
+               callHook(vm, 'beforeUpdate')
+               }
+            }
+         }, true /* isRenderWatcher */)
+         也就是在组件已经 mounted 之后，才会去调用这个钩子函数。
+         [src/core/observer/scheduler]的[flushSchedulerQueue]
+         watcher = queue[index]
+         if (watcher.before) {
+            watcher.before()
+         }
+         watcher.run()
+         updated的执行是什么时候？
+         [flushSchedulerQueue]中
+         const updatedQueue = queue.slice()
+         callUpdatedHooks(updatedQueue)
+         [callUpdatedHooks]中
+         const watcher = queue[i]
+         const vm = watcher.vm
+         if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
+            callHook(vm, 'updated')
+         }
+         注意，只有[mounted]的组件并且数据的确变化并且组件没被销毁，才会执行[updated]钩子函数。
+         我们之前提过，在组件 [mount] 的过程中，会实例化一个[渲染的 Watcher] 去监听 [vm] 上的数据变化重新渲染，这断逻辑发生在 [mountComponent] 函数执行的时候。
+         那么在实例化 [Watcher] 的过程中，在它的构造函数里会判断 [isRenderWatcher](初始化的时候传参确认)，接着把当前 [watcher] 的实例赋值给 [vm._watcher]
+         同时，还把当前 [wathcer] 实例 push 到 [vm._watchers] 中，[vm._watcher] 是专门用来监听 vm 上数据变化然后重新渲染的，所以它是一个渲染相关的 watcher，
+         因此在 [callUpdatedHooks] 函数中，只有 [vm._watcher] 的回调执行完毕后，才会执行 [updated] 钩子函数。
+      4. beforeDestroy,destroyed
+         [src/core/instance/lifecycle]中[Vue.prototype.$destroy]原型上定义的方法。
+         [beforeDestroy] 钩子函数的执行时机是在 $destroy 函数执行最开始的地方，接着执行了一系列的销毁动作，包括从 parent 的 $children 中删掉自身，删除 watcher，
+         当前渲染的 VNode 执行销毁钩子函数等。[先父后子]
+         [destroy] 钩子函数在执行完上述操作之后再被触发，因为上述操作还包括执行[vm.__patch__(vm._vnode, null)] 触发它子组件的销毁钩子函数，所以[先子后父]
+      5. 总结
+         在 created 钩子函数中可以访问到数据，在 mounted 钩子函数中可以访问到 DOM，在 destroy 钩子函数中可以做一些定时器销毁工作。
+   6. 组件注册
+      [src/core/global-api/assets]中[initAssetRegisters]
+      if (type === 'component' && isPlainObject(definition)) {
+         definition.name = definition.name || id
+         definition = this.options._base.extend(definition)
+      }
+      this.options[type + 's'][id] = definition
+      对于全局注册：[Vue.component("app", App);]，通过以上代码就能生成构造器，并挂载在[Vue.options.components]上，即[vm.$options.components]
+      [ASSET_TYPES]来自[src/shared/constants]
+      export const ASSET_TYPES = [
+      'component',
+      'directive',
+      'filter'
+      ]
+      [src/core/vdom/create-element]的[_createElement]的[tag]判断逻辑
+      else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+         // component
+         vnode = createComponent(Ctor, data, context, children, tag)
+      }
+      以上代码就会使用注册的vue组件构造函数去创建vnode。
+      [src/core/utils/options]中[resolveAsset]
+      先通过 const assets = options[type] 拿到 assets，然后再尝试拿 assets[id]，这里有个顺序，先直接使用 id 拿，如果不存在，则把 id变成驼峰的形式再拿，
+      如果仍然不存在则在驼峰的基础上把首字母再变成大写的形式再拿，如果仍然拿不到则报错。
+      这样说明了我们在使用 Vue.component(id, definition) 全局注册组件的时候，id 可以是连字符、驼峰或首字母大写的形式。
+      那么回到我们的调用 resolveAsset(context.$options, 'components', tag)，即拿 vm.$options.components[tag]，
+      这样我们就可以在 resolveAsset 的时候拿到这个组件的构造函数，并作为 createComponent 的钩子的参数。
+      以上是全局注册，那么局部注册呢？
+      [src/core/global-api/extend]中[Vue.extend]
+      Sub.options = mergeOptions(
+         Super.options,
+         extendOptions
+      )
+      Super.options就是Vue.options，或者Super.Super.options是Vue.options，就是全局注册的组件一定能在此找到
+      extendOptions就包含局部注册的组件
+      export default {
+         name: "app",
+         components: {
+            HelloWorld
+         }
+      };
+      即
+      components: {
+         HelloWorld
+      }
+      然后在组件初始化[core/instance/init.js]中的[_init]的时候，调用[initInternalComponent]
+      const opts = vm.$options = Object.create(vm.constructor.options)
+      所以组件中可以访问到局部注册的组件的定义，在[vm.$options.components]中
+      所以在[src/core/utils/options]中[resolveAsset]可以拿到局部组件的定义
+      但注意，全局主键的定义已经提前Vue.extend了，而局部组件则[core/vdom/create-component.js]中的[createComponent]中
+      if (isObject(Ctor)) {
+         Ctor = baseCtor.extend(Ctor)
+      }
+      转成构造函数的。
+      可以看到，局部组件只能在当前组件使用，因为扩展在Sub上，而全局组件是扩展在Vue上，在任何[mergeOptions]的时候都会合并配置，让所有组件使用。
+      一些细节注意：
+      [src/core/util/options]中[mergeAssets]
+      ASSET_TYPES.forEach(function (type) {
+         strats[type + 's'] = mergeAssets
+      })
+      [mergeAssets]
+      const res = Object.create(parentVal || null)
+      这种合并配置的机制能让componets挂载在原型上
+      [src/core/global-api/extend]中[Vue.extend]
+      if (name) {
+         Sub.options.components[name] = Sub
+      }
+      所以组件如果有name属性，就能在VM.$options.components上看到它，当然你在VM.$options.components上还能看到局部定义的component，
+      甚至在原型上（_proto_）找到全局定义的组件，以及内置组件。
