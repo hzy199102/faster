@@ -319,7 +319,7 @@ vue
             callHook(vm, 'updated')
          }
          注意，只有[mounted]的组件并且数据的确变化并且组件没被销毁，才会执行[updated]钩子函数。
-         我们之前提过，在组件 [mount] 的过程中，会实例化一个[渲染的 Watcher] 去监听 [vm] 上的数据变化重新渲染，这断逻辑发生在 [mountComponent] 函数执行的时候。
+         我们之前提过，在组件 [mount] 的过程中，会实例化一个[渲染的 Watcher] 去监听 [vm] 上的数据变化重新渲染，这段逻辑发生在 [mountComponent] 函数执行的时候。
          那么在实例化 [Watcher] 的过程中，在它的构造函数里会判断 [isRenderWatcher](初始化的时候传参确认)，接着把当前 [watcher] 的实例赋值给 [vm._watcher]
          同时，还把当前 [wathcer] 实例 push 到 [vm._watchers] 中，[vm._watcher] 是专门用来监听 vm 上数据变化然后重新渲染的，所以它是一个渲染相关的 watcher，
          因此在 [callUpdatedHooks] 函数中，只有 [vm._watcher] 的回调执行完毕后，才会执行 [updated] 钩子函数。
@@ -398,3 +398,218 @@ vue
       }
       所以组件如果有name属性，就能在VM.$options.components上看到它，当然你在VM.$options.components上还能看到局部定义的component，
       甚至在原型上（_proto_）找到全局定义的组件，以及内置组件。
+   7. 异步组件
+      1. 异步组件实现方式
+      2. 异步组件的三种实现方式
+      3. 工厂函数
+         Vue.component("HelloWorld", function(resolve, reject) {
+         // 这个特殊的 require 语法告诉 webpack
+         // 自动将编译后的代码分割成不同的块，
+         // 这些块将通过 Ajax 请求自动下载。
+         require(["./components/HelloWorld.vue"], res => {
+            resolve(res);
+         });
+         });
+         之前这里定义对象，这里传递的是函数，有何不一样呢？
+         [src/core/global-api/assets]中[initAssetRegisters]
+         this.options[type + 's'][id] = definition
+         直接把工厂函数定义到Vue.options.components[id]上，不会处理为构造函数
+         [src/core/vdom/create-element]的[_createElement]的[tag]判断逻辑
+         else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+            // component
+            vnode = createComponent(Ctor, data, context, children, tag)
+         }
+         这里Ctor就是工厂函数
+         [core/vdom/create-component.js]中的[createComponent]中
+         if (isUndef(Ctor.cid)) {
+         asyncFactory = Ctor
+         Ctor = resolveAsyncComponent(asyncFactory, baseCtor)
+         ...
+         }
+         构造函数有cid，异步组件是工厂函数木有，所以会走进以上逻辑。
+         [core/vdom/helpers/resolve-async-component]中的[resolveAsyncComponent]中
+         const owner = currentRenderingInstance
+         if (owner && isDef(factory.owners) && factory.owners.indexOf(owner) === -1) {
+            // already pending
+            factory.owners.push(owner)
+         }
+         if (owner && !isDef(factory.owners)) {
+            const owners = factory.owners = [owner]
+            ...
+         }
+         如果加载多个相同的异步组件，那只要一个成功，就是OK，强制刷新数组中的全部的相同异步组件。（官方：多个地方同时初始化一个异步组件，那么它的实际加载应该只有一次。）
+         const forceRender = (renderCompleted: boolean) => {
+            for (let i = 0, l = owners.length; i < l; i++) {
+            (owners[i]: any).$forceUpdate()
+            }
+
+            if (renderCompleted) {
+            owners.length = 0
+            if (timerLoading !== null) {
+               clearTimeout(timerLoading)
+               timerLoading = null
+            }
+            if (timerTimeout !== null) {
+               clearTimeout(timerTimeout)
+               timerTimeout = null
+            }
+            }
+         }
+         const resolve = once((res: Object | Class<Component>) => {
+            // cache resolved
+            factory.resolved = ensureCtor(res, baseCtor)
+            // invoke callbacks only if this is not a synchronous resolve
+            // (async resolves are shimmed as synchronous during SSR)
+            if (!sync) {
+            forceRender(true)
+            } else {
+            owners.length = 0
+            }
+         })
+         const reject = once(reason => {
+            process.env.NODE_ENV !== 'production' && warn(
+            `Failed to resolve async component: ${String(factory)}` +
+            (reason ? `\nReason: ${reason}` : '')
+            )
+            if (isDef(factory.errorComp)) {
+            factory.error = true
+            forceRender(true)
+            }
+         })
+         注意 resolve 和 reject 函数用 once 函数做了一层包装，[shared/util]的[once]
+         export function once (fn: Function): Function {
+         let called = false
+         return function () {
+            if (!called) {
+               called = true
+               fn.apply(this, arguments)
+            }
+         }
+         }
+         once 逻辑非常简单，传入一个函数，并返回一个新函数，它非常巧妙地利用闭包和一个标志位保证了它包装的函数只会执行一次，也就是确保 resolve 和 reject 函数只执行一次。
+         return factory.loading
+         ? factory.loadingComp
+         : factory.resolved
+         如果没有loading定义就返回undefined，回到[core/vdom/create-component.js]中的[createComponent]中
+         if (Ctor === undefined) {
+            // return a placeholder node for async component, which is rendered
+            // as a comment node but preserves all the raw information for the node.
+            // the information will be used for async server-rendering and hydration.
+            return createAsyncPlaceholder(
+            asyncFactory,
+            data,
+            context,
+            children,
+            tag
+            )
+         }
+         [core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]中
+         就是创建一个空的vnode，最终会渲染成一个注释节点，
+         什么是注释节点？
+         在dom下查看，会发现在即将加载组件的地方呈现：<!---->
+         接着[core/vdom/helpers/resolve-async-component]中的[resolveAsyncComponent]中
+         const res = factory(resolve, reject)
+         因为是工厂函数，异步执行，所以这个时候异步执行的结果出来（看工厂函数最上方的示例代码），触发[resolve(res);]，这里的res就是export出来的值，resolve则事先定义好了，
+         只会执行一次
+         [core/vdom/helpers/resolve-async-component]中的[ensureCtor]
+         function ensureCtor (comp: any, base) {
+         if (
+            comp.__esModule ||
+            (hasSymbol && comp[Symbol.toStringTag] === 'Module')
+         ) {
+            comp = comp.default
+         }
+         return isObject(comp)
+            ? base.extend(comp)
+            : comp
+         }
+         这个函数目的是为了保证能找到异步组件 JS 定义的组件对象，并且如果它是一个普通对象，则调用 Vue.extend 把它转换成一个组件的构造函数。
+         [src/core/instance/lifecycle]的[$forceUpdate]
+         Vue.prototype.$forceUpdate = function () {
+            const vm: Component = this
+            if (vm._watcher) {
+               vm._watcher.update()
+            }
+         }
+         最终会触发[src/core/instance/lifecycle]的[vm._update(vm._render(), hydrating)]
+         $forceUpdate 的逻辑非常简单，就是调用渲染 watcher 的 update 方法，让渲染 watcher 对应的回调函数执行，也就是触发了组件的重新渲染。
+         之所以这么做是因为 Vue 通常是数据驱动视图重新渲染，但是在整个异步组件加载过程中是没有数据发生变化的，所以通过执行 $forceUpdate 可以强制组件重新渲染一次。
+         [core/vdom/create-component.js]中的[createComponent]
+         会被再次触发，以上逻辑会在运行一次，但是Ctor = resolveAsyncComponent(asyncFactory, baseCtor)不再是undefined，
+         [core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]中
+         if (isDef(factory.resolved)) {
+            return factory.resolved
+         }
+         所以会正常往下运行，和同步组件一样的流程了。
+         注意注释节点最终会被替换成正常的组件节点，然后被patch，被render。
+      4. promise
+         Vue.component("HelloWorld", () => {
+         // 该 `import` 函数返回一个 `Promise` 对象。
+         return import("./components/HelloWorld.vue");
+         }); 
+         只说和工厂函数的区别
+         [core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]中
+         const res = factory(resolve, reject)
+         if (isObject(res)) {
+            if (isPromise(res)) {
+            // () => Promise
+            if (isUndef(factory.resolved)) {
+               res.then(resolve, reject)
+            }
+         这时候resolve,reject就完美和工厂函数的实现对应上了。
+         webpack 2+ 支持了异步加载的语法糖：() => import('./my-async-component')，
+         当执行完 res = factory(resolve, reject)，返回的值就是 import('./my-async-component') 的返回值，它是一个 Promise 对象。
+         Vue也就支持了这个import语法糖。（官方：promise是为了支持webpack的import语法）
+      5. 高级异步组件
+         [core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]中
+         if (isPromise(res.component)) {
+         res.component.then(resolve, reject)
+         if (isDef(res.error)) {
+            factory.errorComp = ensureCtor(res.error, baseCtor)
+         }
+         if (isDef(res.loading)) {
+            factory.loadingComp = ensureCtor(res.loading, baseCtor)
+            if (res.delay === 0) {
+               factory.loading = true
+            } else {
+               timerLoading = setTimeout(() => {
+               timerLoading = null
+               if (isUndef(factory.resolved) && isUndef(factory.error)) {
+                  factory.loading = true
+                  forceRender(false)
+               }
+               }, res.delay || 200)
+            }
+         }
+         if (isDef(res.timeout)) {
+            timerTimeout = setTimeout(() => {
+               timerTimeout = null
+               if (isUndef(factory.resolved)) {
+               reject(
+                  process.env.NODE_ENV !== 'production'
+                     ? `timeout (${res.timeout}ms)`
+                     : null
+               )
+               }
+            }, res.timeout)
+         }
+         注意：返回值
+         return factory.loading
+         ? factory.loadingComp
+         : factory.resolved
+         如果[res.delay === 0]直接返回loading组件，前提是有，否则如果先运行到定时器，又会走
+         factory.loading = true
+         forceRender(false)
+         然后走一遍之前的流程，在[core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]中
+         if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
+            return factory.loadingComp
+         }
+         接着就是正常同步流程，同理timeout处理，同理errorComp处理
+         接着走
+         [core/vdom/helpers/resolve-async-component]中的[createAsyncPlaceholder]
+         res.component.then(resolve, reject)
+         其实相对其他2种异步组件方式，高阶异步组件的流程就多了loading的处理，以及error的处理。
+      6. 总结
+         知道了 3 种异步组件的实现方式，并且看到高级异步组件的实现是非常巧妙的，它实现了 loading、resolve、reject、timeout 4 种状态。
+         异步组件实现的本质是 2 次渲染，除了 0 delay 的高级异步组件第一次直接渲染成 loading 组件外，其它都是第一次渲染生成一个注释节点，当异步获取组件成功后，
+         再通过 forceRender 强制重新渲染，这样就能正确渲染出我们异步加载的组件了。
