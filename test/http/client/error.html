@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>webworker</title>
+  </head>
+
+  <body>
+    <h1>webworker</h1>
+    <output id="error" style="color: red;"></output>
+    <output id="result"></output>
+
+    <script>
+      function onError(e) {
+        document.getElementById("error").textContent = [
+          "ERROR: Line ",
+          e.lineno,
+          " in ",
+          e.filename,
+          ": ",
+          e.message
+        ].join("");
+      }
+
+      function onMsg(e) {
+        document.getElementById("result").textContent = e.data;
+      }
+
+      var worker = new Worker("./js/error.js");
+      worker.addEventListener("message", onMsg, false);
+      worker.addEventListener("error", onError, false);
+      worker.postMessage({}); // Start worker without a message.
+    </script>
+  </body>
+</html>
