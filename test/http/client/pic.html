@@ -1,12 +1,60 @@
-<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>引导图</title>
-  </head>
-
-  <body>
-    <img></img>
-    <script></script>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <head> </head>
+  <body
+    style="
+    display: block;
+    margin: 0px;
+"
+  >
+    <img
+      id="img"
+      style="width: 100%; height: 100%; display: block;"
+      onclick="next()"
+    />
   </body>
+  <script src="./js/qwebchannel.js"></script>
+  <script
+    type="text/javascript"
+    src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"
+  ></script>
 </html>
+<script>
+  var MainInteractor = null;
+  var pos = 0;
+  var imgs = [
+    "img/1.PNG",
+    "img/2.PNG",
+    "img/3.PNG",
+    "img/4.PNG",
+    "img/5.PNG",
+    "img/6.PNG",
+    "img/7.PNG",
+    "img/8.PNG",
+    "img/9.PNG",
+    "img/10.PNG",
+    "img/11.PNG",
+    "img/12.PNG"
+  ];
+  var next = function() {
+    pos++;
+    if (pos === imgs.length) {
+      MainInteractor.close();
+      pos = 0;
+      document.getElementById("img").src = imgs[pos];
+    } else {
+      document.getElementById("img").src = imgs[pos];
+    }
+  };
+  window.onload = function() {
+    new QWebChannel(qt.webChannelTransport, channel => {
+      MainInteractor = channel.objects["TestWgtInteractor"];
+    });
+    document.getElementById("img").src = imgs[pos];
+  };
+
+  // var BtnHide = document.getElementById("BtnHide");
+  // BtnHide.onclick = function() {
+  //   MainInteractor.close();
+  // };
+</script>
