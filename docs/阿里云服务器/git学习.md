@@ -40,7 +40,7 @@ git 教程
          Git 告诉我们当前没有需要提交的修改，而且，工作目录是干净（working tree clean）的。
    2. 版本回退
       1. 重复[2.1]的步骤
-      2. [git log]
+      2. [git log]，如果内容多[:q]退出
       3. [git log --pretty=oneline]
          如果嫌输出信息太多，看得眼花缭乱的，可以试试加上--pretty=oneline 参数
       4. [git reset --hard HEAD^]
@@ -76,3 +76,30 @@ git 教程
          [git status][git add readme.txt][git add LICENSE][git status]
          [git commit -m "understand how stage works"][git status]
    4. 管理修改
+      1. 第一次修改 -> [git add] -> 第二次修改 -> [git commit]-> [git status]
+         Git 管理的是修改，当你用 git add 命令后，在工作区的第一次修改被放入暂存区，准备提交，但是，在工作区的第二次修改并没有放入暂存区，所以，git commit 只负责把暂存区的修改提交了，也就是第一次的修改被提交了，第二次的修改不会被提交。
+      2. [git diff HEAD -- readme.txt]
+         可以查看工作区和版本库里面最新版本的区别，注意命令区分大小写。
+      3. 小结
+         现在，你又理解了 Git 是如何跟踪修改的，每次修改，如果不用 git add 到暂存区，那就不会加入到 commit 中。
+   5. 撤销修改
+      1. 修改了 readme.txt 和 LICENSE 两个文件的内容
+      2. [git status]
+         修改之后还没提交暂存区，可以查看状态，并且根据提示判断如何撤销修改，
+         如果是 v2.2.23 以后的 git 版本，使用[git restore readme.txt]撤销工作区的修改，
+         之前的版本使用[git checkout -- readme.txt]撤销工作区的修改，
+         注意，只能一个个撤销
+      3. [git add --all][git status]
+         已经提交到暂存区，可以查看状态，并且根据提示判断如何撤销修改，
+         如果是 v2.2.23 以后的 git 版本，使用[git restore --staged readme.txt]可以把暂存区的修改撤销掉（unstage），重新放回工作区，再[git restore readme.txt]撤销工作区的修改，
+         之前的版本使用[git reset HEAD readme.txt]可以把暂存区的修改撤销掉（unstage），重新放回工作区，再[git checkout -- readme.txt]撤销工作区的修改
+         注意，只能一个个撤销
+   6. 删除文件
+      1. [touch test.txt][git add test.txt][git commit -m "add test.txt"]
+         新建一个文件并且添加到版本库
+      2. [rm test.txt]
+         删除文件
+      3. [git rm test.txt][git commit -m "remove test.txt"]
+         彻底删除，但是可以通过[2.2 版本回退]恢复
+      4. [git checkout -- test.txt]
+         如果没有执行[2.6.3]，可以[git checkout -- test.txt]，或者[git restore test.txt]，反正删除文件也是修改文件的一种，可以参考[3.5]的全部方式。
