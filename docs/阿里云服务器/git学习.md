@@ -218,5 +218,5 @@ git 教程
    6. Feature分支
       [git branch -D dev]强行删除分支，注意是D不是d
    7. 多人协作
-      
-
+      1. 在github上创建了一个分支dev，在本地运行[git branch -a]是看不到[origin/dev]的，需要[git pull]，接着[git switch -c dev origin/dev]即可
+      2. [git branch --set-upstream-to dev origin/dev]在你本地已经建立了dev分支，但是还没有和远程dev分支关联的时候采用
