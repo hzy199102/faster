@@ -1,5 +1,6 @@
 git 教程
 参考资料：https://www.liaoxuefeng.com/wiki/896043488029600
+         http://www.ruanyifeng.com/blog/2015/12/git-workflow.html
 
 1. git 简介
    1. 安装 git
@@ -219,4 +220,66 @@ git 教程
       [git branch -D dev]强行删除分支，注意是D不是d
    7. 多人协作
       1. 在github上创建了一个分支dev，在本地运行[git branch -a]是看不到[origin/dev]的，需要[git pull]，接着[git switch -c dev origin/dev]即可
-      2. [git branch --set-upstream-to dev origin/dev]在你本地已经建立了dev分支，但是还没有和远程dev分支关联的时候采用
+      2. [git branch --set-upstream-to dev origin/dev]在你本地已经建立了dev分支，但是还没有和远程dev分支关联的时候采用，否则你创建本地分支dev，在[git push]的
+         时候会发现错误提示，没有指定本地dev分支与远程origin/dev分支的链接，但是可以根据提示创建连接。
+      3. [git remote -v]查看远程库信
+      4. [git push origin branch-name],从本地推送分支，如果推送失败，先用git pull抓取远程的新提交
+   8. Rebase
+      1. [git rebase],rebase操作可以把本地未push的分叉提交历史整理成直线
+         参考资料：https://www.jianshu.com/p/f7ed3dd0d2d8
+         1. dev分支做2次commit，修改test.txt和hello.py文件内容
+         2. 在另一台电脑push origin/dev，test.text和hello.py的内容修改
+         3. 此时dev分支git push，失败，提示git pull
+         4. [git pull]之后可能因为内容冲突还需要手动修正冲突，并且[git add --all]
+         5. [git log --graph --pretty=oneline --abbrev-commit]可以看到有分叉了，对于强迫症者，想要梳理成直线
+         6. git rebase，根据提示信息操作
+         7. 如果有内容冲突，可以[git rebase --abort]，相当于回滚到[git rebase]之前
+         8. 如果有内容冲突，也可以手动修改对应冲突，[git am --show-current-patch]查看冲突的文件，修正之后[git add --all]，也可以[git add/rm <conflicted_files>]，
+            接着[git rebase --continue]
+         9. [git log --graph --pretty=oneline --abbrev-commit]，这时候可以看到分叉已经变成直线了
+         10. [git push]
+      2. 整合本地多个[git commit]记录为一个。
+         参考资料：https://www.codercto.com/a/45325.html，https://www.jianshu.com/p/4a8f4af4e803
+         1. [git rebase -i HEAD~3]或者[git rebase -i commitid]，注意这个commitid为合并commitid的外边界commitid，具体看vi编辑文本
+         2. pick：保留该commit（缩写:p）
+            reword：保留该commit，但我需要修改该commit的注释（缩写:r）
+            edit：保留该commit, 但我要停下来修改该提交(不仅仅修改注释)（缩写:e）
+            squash：将该commit和前一个commit合并（缩写:s）
+            fixup：将该commit和前一个commit合并，但我不要保留该提交的注释信息（缩写:f）
+            exec：执行shell命令（缩写:x）
+            drop：我要丢弃该commit（缩写:d）
+            一般用到s和p
+         3. 因为是vi编辑，不详述了，[:wq]之后，会出现第二个vi文本提示你确认commit信息
+         4. [git log --graph --pretty=oneline --abbrev-commit]，这时候可以看到多个commit已经变成一个了。
+         5. 虽然[git log]已经看不到对应的日志，但是[git reflog]还是能看到所有原始操作。
+5. 标签管理
+   和commitid的含义类似，但是commitid是毫无逻辑的字符串，但是tag是容易记忆的代号，所以，tag就是一个让人容易记住的有意义的名字，它跟某个commit绑在一起。
+   1. 创建标签
+      1. [git tag v1.0],默认标签是打在最新提交的commit上
+      2. [git tag]查看所有
+      3. [git log --pretty=oneline --abbrev-commit][git tag v0.9 commitid]找到指定commit提交打标签
+         标签不是按时间顺序列出，而是按字母排序的
+      4. [git show <tagname>],查看标签信息
+      5. [git tag -a v0.1 -m "version 0.1 released" commitid],还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字
+   2. 操作标签
+      1. [git tag -d <tagname>]，删除标签
+         因为创建的标签都只存储在本地，不会自动推送到远程。所以，打错的标签可以在本地安全删除。
+      2. [git push origin <tagname>]或者[git push origin --tags]
+         推送某个标签到远程，或者，一次性推送全部尚未推送到远程的本地标签
+      3. 如果标签已经推送到远程，要删除远程标签就麻烦一点，先从本地删除：[git tag -d <tagname>]
+         然后，从远程删除。删除命令也是push:[git push origin :refs/tags/v0.9]
+6. 自定义GIT
+   1. 忽略特殊文件
+      1. [touch .gitignore][ls -a][vi .gitignore]把LICENSE加入
+      2. [git rm -r --cached LICENSE]，如果LICENSE在.gitignore生效之前就建好，需要清理下git缓存
+      3. [vi LICENSE]修改内容，[git status]会发现还是有LICENSE的内容，别管，[git add --add][git commit -m 'update .gitignore']，
+         之后会发现在修改LICENSE不会在[git status]中出现了。
+   2. 配置别名
+      1. [git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"]
+         [git lg]
+         相信我，输入这行命令，你会开心到哭的
+         当前用户的Git配置文件放在用户主目录下的一个隐藏文件.gitconfig中
+         [cd ~][pwd][ls -a][cat .gitconfig]
+   3. 搭建git服务器
+7. git submodule
+
