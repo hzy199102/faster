@@ -282,4 +282,15 @@ git 教程
          [cd ~][pwd][ls -a][cat .gitconfig]
    3. 搭建git服务器
 7. git submodule
-
+   1. [git submodule add [gitskill url]][git status]
+      可以看到在仓库中多出来文件 gitskill 以及 .gitmodules
+   2. [git submodule add [subrepo1 url] ./module/module1][git status][ll]
+      指定了路径
+   3. [git submodule init][git submodule update]
+      git clone项目的时候需要初始化子库，[git clone --recursive]可以达到同样的效果
+   4. 子仓库也可以切换分支，提交代码，但是在git push之后，记住在主仓库中要[git add --all][git commit -m 'update submodule'][git push]，这样其他人才可以用得到。
+   5. 参考资料：https://blog.csdn.net/wangyiyungw/article/details/83818144
+8. 小知识
+   1. git fetch和git pull的区别？
+      git fetch是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。
+      而git pull 则是将远程主机的最新内容拉下来后直接合并，即：git pull = git fetch + git merge，这样可能会产生冲突，需要手动解决。
