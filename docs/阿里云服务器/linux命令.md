@@ -35,3 +35,12 @@
       就是请求一个专门检测网络 IP 信息的网址
    2. [curl ifconfig.me]
       这个能直接得到公网 IP，但是很卡，经常得不到结果，所以建议使用第一种。
+4. echo
+   1. echo 是打印变量的值或者给定的字符串
+      输入 echo hello 或者 echo "hello"都是在控制台打印出 hello 单词
+      [echo $HOME]
+   2. 我们需要把打印出来的字符串记录到文本文件中，就需要>和>>命令
+      [echo hello > a.txt]
+      a.txt 中会记录下 hello，但是如果再次执行 echo hello > a.txt。则会覆盖之前的 hello.
+      [echo world >> a.txt ]
+      a.txt 中会记录的是 hello word,但是 hello 和 word 不是写在一行的，而是每个单词占用一行的。

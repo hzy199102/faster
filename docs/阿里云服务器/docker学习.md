@@ -92,3 +92,31 @@
          在云服务器上，以我的阿里云为例，我刚开始做了如上配置一直外网访问失败，直到找到了参考资料，才知道根源。
          进入阿里云实例，选择本实例安全组，对指定实例点配置规则，加入内网入放心规则，有参考，写对端口号即可。
          此时外网输入[docker -H tcp://公网 IP:2222 info]，就能得到结果了。
+   2. 拉取镜像
+      [docker pull library/hello-world]
+      library/hello-world 是 image 文件在仓库里面的位置，其中 library 是 image 文件所在的组， hello-world 是 image 文件的名字。
+      [docker images]
+      查看本地镜像列表
+      [docker run hello-world]
+      运行镜像
+      [docker rm $(docker ps -a -q)]
+      删除所有已经停止的容器
+      [docker rmi <image id>]
+      删除 images（镜像），通过 image 的 id 来指定删除谁
+      拉取的镜像默认存储在[/var/lib/docker]下面
+   3. 创建镜像，构建 dockerfile
+      1. [touch Dockerfile]
+         FROM nginx
+         MAINTAINER ZHIER <203161585@qq.com>
+         RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
+      2. [docker build -t angelkitty/nginx_web:v1 .]
+         我在这里耽误了至少 2 个小时，因为 build 命令始终出错，我知道是[RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html]出错，
+         但是这就是简单的输入文本内容的操作，系统总提示没有找到目录，我先[docker ps -a --no-trunc]，发现 commond 的完整命令似乎有误，就是''和“”的问题，
+         涉及转义，就顺带了解了 RUN 命令的两种写法，commond 和[]，但是始终无法解释为什么找不到目录，然后我把命令改为[RUN echo hh]，就没问题了，于是定位
+         [/usr/share/nginx/html/index.html]的问题，后来我百度 docker nginx ，才明白，运行基于 Docker 的 Nginx 镜像后，访问 localhost 能看到 Nginx 默认的首页，
+         这个首页的位置是 Nginx 镜像内的/usr/share/nginx/html 目录下面。也就是说，路径是镜像内的目录，至此问题解决。
+         [docker exec -it containerid/name /bin/sh]：通过交互式的方式进入到 docker 容器内部。
+      3. [docker run --name nginx_web -d -p 2223:80 zhier/nginx_web:v1]
+      4. [curl http://localhost:8080]
+         可以看到<h1>Hello, Docker!</h1>
+         外网[http://公网 IP:2223/]，为啥是 2223，因为我的安全组暴露的就是这个区间。
