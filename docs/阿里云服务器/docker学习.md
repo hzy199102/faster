@@ -120,3 +120,73 @@
       4. [curl http://localhost:8080]
          可以看到<h1>Hello, Docker!</h1>
          外网[http://公网 IP:2223/]，为啥是 2223，因为我的安全组暴露的就是这个区间。
+
+docker——从入门到实践
+参考资料：[https://blog.51cto.com/nosmoking/1881033],[https://yeasy.gitbooks.io/docker_practice/image/pull.html]
+
+1. 基本概念
+   1. 镜像
+      Docker 镜像是一个特殊的文件系统，除了提供容器运行时所需的程序、库、资源、配置等文件外，还包含了一些为运行时准备的一些配置参数（如匿名卷、环境变量、用户等）。
+      镜像不包含任何动态数据，其内容在构建之后也不会被改变。
+      镜像构建时，会一层层构建，前一层是后一层的基础。每一层构建完就不会再发生改变，后一层上的任何改变只发生在自己这一层。比如，删除前一层文件的操作，实际不是真的删除前一层的文件，而是仅在当前层标记为该文件已删除。在最终容器运行的时候，虽然不会看到这个文件，但是实际上该文件会一直跟随镜像。因此，在构建镜像的时候，需要额外小心，每一层尽量只包含该层需要添加的东西，任何额外的东西应该在该层构建结束前清理掉。
+   2. 容器
+      镜像（Image）和容器（Container）的关系，就像是面向对象程序设计中的 类 和 实例 一样，镜像是静态的定义，容器是镜像运行时的实体。容器可以被创建、启动、停止、删除、暂停等。
+      每一个容器运行时，是以镜像为基础层，在其上创建一个当前容器的存储层，我们可以称这个为容器运行时读写而准备的存储层为 容器存储层。
+      容器存储层的生存周期和容器一样，容器消亡时，容器存储层也随之消亡。因此，任何保存于容器存储层的信息都会随容器删除而丢失。
+      按照 Docker 最佳实践的要求，容器不应该向其存储层内写入任何数据，容器存储层要保持无状态化。所有的文件写入操作，都应该使用 数据卷（Volume）、或者绑定宿主目录，在这些位置的读写会跳过容器存储层，直接对宿主（或网络存储）发生读写，其性能和稳定性更高。
+   3. docker overlay2 devicemapper
+      daemon.json 中的配置，默认是 overlay2
+      参考资料：[https://blog.51cto.com/nosmoking/1881033],[https://www.cnblogs.com/elnino/p/11015076.html]
+   4. docker 镜像筛选
+      [docker image ls -f since=mongo:3.2]:看到在 mongo:3.2 之后建立的镜像
+      [docker image ls ubuntu]:根据仓库名列出镜像
+      [docker image ls -f dangling=true][docker image prune]
+      由于新旧镜像同名，旧镜像名称被取消，从而出现仓库名、标签均为 <none> 的镜像。这类无标签镜像也被称为 虚悬镜像(dangling image)
+      镜像体积
+      Docker Hub 中显示的体积是压缩后的体积。在镜像下载和上传过程中镜像是保持着压缩状态的，因此 Docker Hub 所显示的大小是网络传输中更关心的流量大小。而 docker image ls 显示的是镜像下载到本地后，展开的大小，准确说，是展开后的各层所占空间的总和，因为镜像到本地后，查看空间的时候，更关心的是本地磁盘空间占用的大小。
+      docker image ls 列表中的镜像体积总和并非是所有镜像实际硬盘消耗。由于 Docker 镜像是多层存储结构，并且可以继承、复用，因此不同镜像可能会因为使用相同的基础镜像，从而拥有共同的层。由于 Docker 使用 Union FS，相同的层只需要保存一份即可，因此实际镜像硬盘占用空间很可能要比这个列表镜像大小的总和要小的多。
+      [docker system df]：查看镜像、容器、数据卷所占用的空间。
+   5. [docker run -t -i ubuntu:18.04 /bin/bash]
+   6. [docker rm $(docker ps -aq -n 5)]：列出最近创建的 5 个容器信息。
+      根据状态过滤
+      $ docker ps -a --filter 'exited=0'
+      $ docker ps --filter status=running
+      $ docker ps --filter status=paused
+      根据镜像过滤
+      #镜像名称
+      $ docker ps --filter ancestor=nginx -a #镜像 ID
+      $ docker ps --filter ancestor=d0e008c6cf02 -a
+      根据启动顺序过滤
+      $ docker ps -f before=9c3527ed70ce
+      \$ docker ps -f since=6e63f6ff38b0
+      [docker container prune]：清理掉所有处于终止状态的容器
+   7. [docker run -dit ubuntu][docker exec -i commitid bash][docker exec -it COMMITID bash]
+      只用 -i 参数时，由于没有分配伪终端，界面没有我们熟悉的 Linux 命令提示符，但命令执行结果仍然可以返回。
+      当 -i -t 参数一起使用时，则可以看到我们熟悉的 Linux 命令提示符。
+      如果从这个 stdin 中 exit，不会导致容器的停止。
+   8. [docker export 7691a814370e > ubuntu.tar][cat ubuntu.tar | docker import - test/ubuntu:v1.0]
+      导出容器和导入容器快照
+   9. dockerhub
+      [https://hub.docker.com]/huangzy0217/1234567890/203161585@qqc.om
+      [docker login]：只有登录了才能做 push 操作
+      [docker tag ubuntu:18.04 username/ubuntu:18.04][docker push username/ubuntu:18.04]
+      推送自己的镜像到 dockerhub
+      [docker search nginx]：查询 nginx
+   10. 私有仓库
+       参考资料：[http://www.imooc.com/article/263754]。
+       [docker run -d -p 2224:5000 -v /home/docker/registry:/var/lib/registry registry]
+       打开私有仓库，必须这个容器在运行才可以，如果 stop 就打不开网址，另外通过-v 标签把镜像默认的存储地址[/var/lib/registry]改为[/home/docker/registry]。
+       [docker tag ubuntu:latest 127.0.0.1:2224/ubuntu:latest]
+       加个标签，作为自己的镜像。
+       [docker images]
+       可以查看到自己的镜像[127.0.0.1:2224/ubuntu:latest]。
+       [docker push 127.0.0.1:2224/ubuntu:latest]
+       上传到私有仓库。
+       [curl 127.0.0.1:2224/v2/\_catalog]
+       打开这个网址可以看到上传到私有仓库的镜像内容[{"repositories":["ubuntu"]}]。
+       [http://127.0.0.1:2224/v2/ubuntu/tags/list]
+       可以看到更详细的信息
+       [docker image rm 127.0.0.1:2224/ubuntu:latest]
+       删除本地镜像。
+       [docker pull 127.0.0.1:2224/ubuntu:latest]
+       重新从私有仓库拉取镜像。发现可以成功。
