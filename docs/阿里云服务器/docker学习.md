@@ -190,3 +190,16 @@ docker——从入门到实践
        删除本地镜像。
        [docker pull 127.0.0.1:2224/ubuntu:latest]
        重新从私有仓库拉取镜像。发现可以成功。
+   11. 数据卷
+      # -v my-vol:/wepapp \
+      [docker run -d -P  --name web --mount source=my-vol,target=/webapp training/webapp python app.py]
+      创建一个名为 web 的容器，并加载一个 数据卷 到容器的 /webapp 目录。
+      [docker volume create my-vol]：创建一个数据卷
+      [docker volume ls]：查看所有的 数据卷
+      [docker volume inspect my-vol]：在主机里使用以下命令可以查看指定 数据卷 的信息
+      [docker inspect web]：在主机里使用以下命令可以查看 web 容器的信息
+      [docker volume rm my-vol]：删除数据卷
+      [docker volume prune]：无主的数据卷可能会占据很多空间，要清理请使用以下命令
+   12. 挂载主机目录
+      使用 --mount 标记可以指定挂载一个本地主机的目录到容器中去。
+      [docker run --rm -it --mount type=bind,source=/home/docker/.bash_history,target=/root/.bash_history ubuntu:18.04 bash]
