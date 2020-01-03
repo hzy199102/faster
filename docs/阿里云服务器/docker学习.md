@@ -20,7 +20,7 @@
       查询 docker 安装过的包
       [ps -ef |grep docker]
       检查系统中是否已经安装了 docker
-      [yum remove docker-ce.x86_64 ddocker-ce-cli.x86_64 -y]
+      [yum remove docker-ce.x86_64 docker-ce-cli.x86_64 -y]
       删除安装包
    4. 卸载掉旧版本的 Docker
       yum remove docker \
@@ -39,10 +39,14 @@
       设置 yum 源
    7. [yum list docker-ce --showduplicates | sort -r]
       可以查看所有仓库中所有 docker 版本，并选择特定版本安装
-   8. [yum install docker-ce-18.06.3.ce]  
+   8. [yum install docker-ce-18.06.3.ce][yum install docker-ce-<version_string> docker-ce-cli-<version_string> containerd.io]
+      [yum install docker-ce-19.03.5 docker-ce-cli-19.03.5 containerd.io]
+      升级 docker 版本，发现启动不起来，参考[https://docs.docker.com/install/linux/docker-ce/centos/][yum remove docker-ce][rm -rf /var/lib/docker]
+      卸载 Docker 软件包，主机上的映像，容器，卷或自定义配置文件不会自动删除。要删除所有图像，容器和卷。
+      这样才能正常启动。
       在正式环境，必须使用统一的稳定版本，而不是总使用最新（这样各 host 上的版本可能不一致）
    9. [systemctl start docker][systemctl enable docker]
-      启动、设置开启开机启动
+      启动、设置开启开机启动,Created symlink from /etc/systemd/system/multi-user.target.wants/docker.service to /usr/lib/systemd/system/docker.service.
    10. [docker version]
        验证安装是否成功(有 client 和 service 两部分表示 docker 安装启动都成功了)，如果 docker 没启动，则只有 client，没有 server 信息
    11. [systemctl status docker]
@@ -109,7 +113,7 @@
          FROM nginx
          MAINTAINER ZHIER <203161585@qq.com>
          RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
-      2. [docker build -t angelkitty/nginx_web:v1 .]
+      2. [docker build -t zhier/nginx_web:v1 .]
          我在这里耽误了至少 2 个小时，因为 build 命令始终出错，我知道是[RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html]出错，
          但是这就是简单的输入文本内容的操作，系统总提示没有找到目录，我先[docker ps -a --no-trunc]，发现 commond 的完整命令似乎有误，就是''和“”的问题，
          涉及转义，就顺带了解了 RUN 命令的两种写法，commond 和[]，但是始终无法解释为什么找不到目录，然后我把命令改为[RUN echo hh]，就没问题了，于是定位
@@ -173,9 +177,14 @@ docker——从入门到实践
       推送自己的镜像到 dockerhub
       [docker search nginx]：查询 nginx
    10. 私有仓库
-       参考资料：[http://www.imooc.com/article/263754]。
-       [docker run -d -p 2224:5000 -v /home/docker/registry:/var/lib/registry registry]
+       参考资料：[http://www.imooc.com/article/263754],[https://blog.csdn.net/duanbiren123/article/details/96482897]。
+       建立私有仓库，可以删除镜像，可以http上传镜像
+       [docker run -d -p 2224:5000 -v /home/docker/registry:/var/lib/registry -v /home/docker/config.yml:/etc/docker/registry/config.yml --restart always --name registry registry]
        打开私有仓库，必须这个容器在运行才可以，如果 stop 就打不开网址，另外通过-v 标签把镜像默认的存储地址[/var/lib/registry]改为[/home/docker/registry]。
+       可以先运行 registry 镜像，[docker exec -it containerid/name /bin/sh][vi /etc/docker/registry/config.yml]，
+       创建配置文件，storage 配置中的 delete=true 配置项，是为了允许删除镜像。默认的镜像是没有这个参数。
+       启动的时候出错，[docker ps]发现没有开启端口，[docker logs registry]，发现是config.yml的version拼写错误，修复即可。
+       ["insecure-registries": ["101.200.192.219"]]
        [docker tag ubuntu:latest 127.0.0.1:2224/ubuntu:latest]
        加个标签，作为自己的镜像。
        [docker images]
@@ -190,16 +199,53 @@ docker——从入门到实践
        删除本地镜像。
        [docker pull 127.0.0.1:2224/ubuntu:latest]
        重新从私有仓库拉取镜像。发现可以成功。
+       [docker tag zhier/nginx_web 127.0.0.1:2224/nginx_web:v1]
+       [docker push 127.0.0.1:2224/nginx_web:v1]
+       [curl  http://127.0.0.1:2224/v2/nginx_web/tags/list]
+       [curl --header "Accept:application/vnd.docker.distribution.manifest.v2+json" -I -XGET  <仓库地址>/v2/<镜像名>/manifests/<tag>]
+       [curl --header "Accept:application/vnd.docker.distribution.manifest.v2+json" -I -XGET  "http://127.0.0.1:2224/v2/nginx_web/manifests/v1"]
+       查询镜像digest_hash,注意v1是版本号，注意双引号，注意要加入header，以及-I -XGET，否则下载下来的是个文件，而不是json格式展示内容
+       [curl -I -X DELETE "<仓库地址>/v2/<镜像名>/manifests/<镜像digest_hash>"]
+       [curl -I -XDELETE http://127.0.0.1:2224/v2/nginx_web/manifests/sha256:cd2cfb28a1568ed57d19b0f650ee5427f0b019798bcaa9fdb5f896efd748bac6]
+       [curl  http://127.0.0.1:2224/v2/nginx_web/tags/list]
+       此时查看删除成功，这里虽然删除了，但是实际上硬盘地址还没有释放，是因为docker删除p_w_picpath只是删除的p_w_picpath的元数据信息。层数据并没有删除。现在进入registry中进行垃圾回收。
+       [docker exec -it registry /bin/sh]
+       [cd /var/lib/registry]
+       [du -sch]：查看镜像大小
+       [registry garbage-collect /etc/docker/registry/config.yml]：开始回收
+       [du -sch]：确认回收完成
    11. 数据卷
-      # -v my-vol:/wepapp \
-      [docker run -d -P  --name web --mount source=my-vol,target=/webapp training/webapp python app.py]
-      创建一个名为 web 的容器，并加载一个 数据卷 到容器的 /webapp 目录。
-      [docker volume create my-vol]：创建一个数据卷
-      [docker volume ls]：查看所有的 数据卷
-      [docker volume inspect my-vol]：在主机里使用以下命令可以查看指定 数据卷 的信息
-      [docker inspect web]：在主机里使用以下命令可以查看 web 容器的信息
-      [docker volume rm my-vol]：删除数据卷
-      [docker volume prune]：无主的数据卷可能会占据很多空间，要清理请使用以下命令
+       [# -v my-vol:/wepapp][docker run -d -p --name web --mount source=my-vol,target=/webapp training/webapp python app.py]
+       创建一个名为 web 的容器，并加载一个 数据卷 到容器的 /webapp 目录。
+       [docker volume create my-vol]：创建一个数据卷
+       [docker volume ls]：查看所有的 数据卷
+       [docker volume inspect my-vol]：在主机里使用以下命令可以查看指定 数据卷 的信息
+       [docker inspect web]：在主机里使用以下命令可以查看 web 容器的信息
+       [docker volume rm my-vol]：删除数据卷
+       [docker volume prune]：无主的数据卷可能会占据很多空间，要清理请使用以下命令
    12. 挂载主机目录
-      使用 --mount 标记可以指定挂载一个本地主机的目录到容器中去。
-      [docker run --rm -it --mount type=bind,source=/home/docker/.bash_history,target=/root/.bash_history ubuntu:18.04 bash]
+       使用 --mount 标记可以指定挂载一个本地主机的目录到容器中去。
+       [docker run --rm -it --mount type=bind,source=/home/docker/.bash_history,target=/root/.bash_history ubuntu:18.04 bash]
+   13. 使用网络
+       1. 外部访问容器
+          [docker run -d -p 127.0.0.1:2226:5000 training/webapp python app.py]：映射到指定地址的指定端口
+          [docker run -d -p 2226:5000 training/webapp python app.py]：映射所有接口地址
+          [docker run -d -p 2226:5000 training/webapp python app.py]：映射到指定地址的指定端口
+          [docker run -d -p 127.0.0.1::5000 training/webapp python app.py]：映射到指定地址的任意端口
+          [docker port containid 5000]：查看映射端口配置
+          [docker run -d -p 2226:5000 -p 2227:80 training/webapp python app.py]：-p 标记可以多次使用来绑定多个端口
+       2. 容器互联
+          [docker network create -d bridge my-net]：创建一个新的 Docker 网络
+          [docker network ls]：查看所有的 Docker 网络
+          [docker run -it --rm --name busybox1 --network my-net busybox sh]：运行一个容器并连接到新建的 my-net 网络
+          [docker run -it --rm --name busybox2 --network my-net busybox sh]：打开新的终端，再运行一个容器并加入到 my-net 网络
+          [ping busybox2]：在 busybox1 容器输入命令，可以发现可以 ping 通
+          [docker network inspect my-net]：可以看到 my-net 网络一共被哪些容器使用
+       3. DNS
+          参考资料：https://linux.cn/article-9943-1.html
+          现在用不到，但是感觉很厉害
+   14. 高级网络配置
+       1. 容器访问外部网络
+          [sysctl net.ipv4.ip_forward]
+          net.ipv4.ip_forward = 1,检查转发是否打开。如果为 0，说明没有开启转发，则需要手动打开。[sysctl -w net.ipv4.ip_forward=1].
+          如果在启动 Docker 服务的时候设定 --ip-forward=true, Docker 就会自动设定系统的 ip_forward 参数为 1。
