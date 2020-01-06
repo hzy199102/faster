@@ -11,7 +11,7 @@ const static = require("koa-static");
 
 const app = new Koa();
 
-const port = 8107;
+const port = 8200;
 
 // 错误处理中间件写在最上面
 app.use(async (ctx, next) => {
@@ -46,6 +46,7 @@ app.on("error", err => {
 // 监听端口
 app.listen(port, function() {
   console.log(path.resolve("./"));
+  console.log(path.resolve("./client"));
   console.log(__dirname);
   console.log(`server run as http://127.0.0.1:${port}`);
 });
