@@ -178,14 +178,13 @@ docker——从入门到实践
       [docker search nginx]：查询 nginx
    10. 私有仓库
        参考资料：[http://www.imooc.com/article/263754],[https://blog.csdn.net/duanbiren123/article/details/96482897]。
-       建立私有仓库，可以删除镜像，可以http上传镜像
+       建立私有仓库，可以删除镜像，可以 http 上传镜像
        [docker run -d -p 2224:5000 -v /home/docker/registry:/var/lib/registry -v /home/docker/config.yml:/etc/docker/registry/config.yml --restart always --name registry registry]
        打开私有仓库，必须这个容器在运行才可以，如果 stop 就打不开网址，另外通过-v 标签把镜像默认的存储地址[/var/lib/registry]改为[/home/docker/registry]。
        可以先运行 registry 镜像，[docker exec -it containerid/name /bin/sh][vi /etc/docker/registry/config.yml]，
        创建配置文件，storage 配置中的 delete=true 配置项，是为了允许删除镜像。默认的镜像是没有这个参数。
-       启动的时候出错，[docker ps]发现没有开启端口，[docker logs registry]，发现是config.yml的version拼写错误，修复即可。
-       ["insecure-registries": ["101.200.192.219"]]
-       [docker tag ubuntu:latest 127.0.0.1:2224/ubuntu:latest]
+       启动的时候出错，[docker ps]发现没有开启端口，[docker logs registry]，发现是 config.yml 的 version 拼写错误，修复即可。
+       ["insecure-registries": ["101.200.192.219"]][docker tag ubuntu:latest 127.0.0.1:2224/ubuntu:latest]
        加个标签，作为自己的镜像。
        [docker images]
        可以查看到自己的镜像[127.0.0.1:2224/ubuntu:latest]。
@@ -199,18 +198,14 @@ docker——从入门到实践
        删除本地镜像。
        [docker pull 127.0.0.1:2224/ubuntu:latest]
        重新从私有仓库拉取镜像。发现可以成功。
-       [docker tag zhier/nginx_web 127.0.0.1:2224/nginx_web:v1]
-       [docker push 127.0.0.1:2224/nginx_web:v1]
-       [curl  http://127.0.0.1:2224/v2/nginx_web/tags/list]
-       [curl --header "Accept:application/vnd.docker.distribution.manifest.v2+json" -I -XGET  <仓库地址>/v2/<镜像名>/manifests/<tag>]
+       [docker tag zhier/nginx_web 127.0.0.1:2224/nginx_web:v1][docker push 127.0.0.1:2224/nginx_web:v1]
+       [curl http://127.0.0.1:2224/v2/nginx_web/tags/list][curl --header "accept:application/vnd.docker.distribution.manifest.v2+json" -i -xget <仓库地址>/v2/<镜像名>/manifests/<tag>]
        [curl --header "Accept:application/vnd.docker.distribution.manifest.v2+json" -I -XGET  "http://127.0.0.1:2224/v2/nginx_web/manifests/v1"]
-       查询镜像digest_hash,注意v1是版本号，注意双引号，注意要加入header，以及-I -XGET，否则下载下来的是个文件，而不是json格式展示内容
-       [curl -I -X DELETE "<仓库地址>/v2/<镜像名>/manifests/<镜像digest_hash>"]
-       [curl -I -XDELETE http://127.0.0.1:2224/v2/nginx_web/manifests/sha256:cd2cfb28a1568ed57d19b0f650ee5427f0b019798bcaa9fdb5f896efd748bac6]
-       [curl  http://127.0.0.1:2224/v2/nginx_web/tags/list]
-       此时查看删除成功，这里虽然删除了，但是实际上硬盘地址还没有释放，是因为docker删除p_w_picpath只是删除的p_w_picpath的元数据信息。层数据并没有删除。现在进入registry中进行垃圾回收。
-       [docker exec -it registry /bin/sh]
-       [cd /var/lib/registry]
+       查询镜像 digest_hash,注意 v1 是版本号，注意双引号，注意要加入 header，以及-I -XGET，否则下载下来的是个文件，而不是 json 格式展示内容
+       [curl -I -X DELETE "<仓库地址>/v2/<镜像名>/manifests/<镜像 digest_hash>"][curl -i -xdelete http://127.0.0.1:2224/v2/nginx_web/manifests/sha256:cd2cfb28a1568ed57d19b0f650ee5427f0b019798bcaa9fdb5f896efd748bac6]
+       [curl http://127.0.0.1:2224/v2/nginx_web/tags/list]
+       此时查看删除成功，这里虽然删除了，但是实际上硬盘地址还没有释放，是因为 docker 删除 p_w_picpath 只是删除的 p_w_picpath 的元数据信息。层数据并没有删除。现在进入 registry 中进行垃圾回收。
+       [docker exec -it registry /bin/sh][cd /var/lib/registry]
        [du -sch]：查看镜像大小
        [registry garbage-collect /etc/docker/registry/config.yml]：开始回收
        [du -sch]：确认回收完成
@@ -249,3 +244,13 @@ docker——从入门到实践
           [sysctl net.ipv4.ip_forward]
           net.ipv4.ip_forward = 1,检查转发是否打开。如果为 0，说明没有开启转发，则需要手动打开。[sysctl -w net.ipv4.ip_forward=1].
           如果在启动 Docker 服务的时候设定 --ip-forward=true, Docker 就会自动设定系统的 ip_forward 参数为 1。
+   15. 镜像
+       1. 利用 commit 理解镜像生成
+          [docker commit [选项] <容器 ID 或容器名> [<仓库名>[:<标签>]]]。
+          [docker commit --author "zhier <203161585@qq.com>" --message "修改了默认网页" webserver nginx:v2]
+          慎用 docker commit
+          1. 每一次修改都会让镜像更加臃肿一次，所删除的上一层的东西并不会丢失.
+          2. 使用 docker commit 意味着所有对镜像的操作都是黑箱操作，生成的镜像也被称为 黑箱镜像.
+          3. 如果仔细观察之前的 docker diff webserver 的结果，你会发现除了真正想要修改的 /usr/share/nginx/html/index.html 文件外，由于命令的执行，还有很多文件被改动或添加了。
+      2. 如果你以 scratch 为基础镜像的话，意味着你不以任何镜像为基础，接下来所写的指令将作为镜像第一层开始存在。
+         不以任何系统为基础，直接将可执行文件复制进镜像的做法并不罕见，比如 swarm、etcd。对于 Linux 下静态编译的程序来说，并不需要有操作系统提供运行时支持，所需的一切库都已经在可执行文件里了，因此直接 FROM scratch 会让镜像体积更加小巧。使用 Go 语言 开发的应用很多会使用这种方式来制作镜像，这也是为什么有人认为 Go 是特别适合容器微服务架构的语言的原因之一。
