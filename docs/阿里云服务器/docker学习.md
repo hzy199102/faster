@@ -258,3 +258,5 @@ docker——从入门到实践
 阮一峰Docker 入门教程: [http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html]
    1. 制作自己的docker容器
       
+
+Docker run参考(7) – Restart策略(–restart):[https://www.centos.bz/2017/01/docker-run-restart-policy/]
