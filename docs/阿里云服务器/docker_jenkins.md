@@ -12,7 +12,10 @@ jenkins/jenkins:lts 比 jenkins/jenkins:alpine 大了 200 多 M，我用了大�
 docker run -d --restart unless-stopped --name jenkins \
  -p 2201:8080 -p 2202:50000 \
  -v /docker_volume/jenkins_home:/var/jenkins_home \
+ -e JAVA_OPTS=-Duser.timezone=Asia/Shanghai \
  jenkins/jenkins:lts
+
+这个命令能解决时区问题，否则定时器会有问题。
 
 [cat /docker_volume/jenkins_home/secrets/initialAdminPassword]
 这个是初始化的账户密码
