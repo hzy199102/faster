@@ -9,10 +9,17 @@ jenkins/jenkins:lts 比 jenkins/jenkins:alpine 大了 200 多 M，我用了大�
 [chown -R 1000:1000 /docker_volume/jenkins_home]
 如果不加这个，是启动不了 jenkins 的，因为用户权限问题，可以在 log 日志中看到，在[https://github.com/jenkinsci/docker]也能看到原因和解决方案
 
+echo $RANDOM
+npm install --registry=https://registry.npm.taobao.org
+npm run build
+echo ${PWD}
+cp -rf \${PWD}/dist/. /home/docker/nginx-docker-demo/html
+
 docker run -d --restart unless-stopped --name jenkins \
  -p 2201:8080 -p 2202:50000 \
  -v /docker_volume/jenkins_home:/var/jenkins_home \
  -e JAVA_OPTS=-Duser.timezone=Asia/Shanghai \
+ -u root \
  jenkins/jenkins:lts
 
 这个命令能解决时区问题，否则定时器会有问题。
@@ -45,3 +52,18 @@ jenkins 插件安装加速
    参考资料:[https://stackoverflow.com/questions/22013217/on-building-jenkins-project-timeout-after-10-minute-error-happens]
    我检查项目大小，发现有 30 多 M，然后尝试在本机拉取，发现也很慢，于是确定是项目大小问题，我 vue create 了一个新的项目在 git 上，然后拉取他，发现一切顺利了。
    这里给我的提醒是如果项目过大，一定要设置更长的超时时间，jenkins 默认的超时时间是 10 分钟。
+
+[cp -rf /home/docker/nginx-docker-demo/. /docker_volume/jenkins_nginx]
+
+这个暂时不用
+docker run -d --rm --name nginx \
+ -p 0.0.0.0:2227:80 -p 0.0.0.0:2228:443 \
+ --volume "/docker_volume/jenkins_nginx/html":/usr/share/nginx/html \
+ --volume "/docker_volume/jenkins_nginx/conf":/etc/nginx \
+ nginx
+
+docker run -d --rm --name nginx \
+ -p 0.0.0.0:2227:80 -p 0.0.0.0:2228:443 \
+ --volume "/docker_volume/jenkins_home/workspace":/usr/share/nginx/html \
+ --volume "/docker_volume/nginx_home/conf":/etc/nginx \
+ nginx
