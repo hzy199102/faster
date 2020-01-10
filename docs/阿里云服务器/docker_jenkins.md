@@ -31,3 +31,17 @@ jenkins 插件安装加速
 这个时候秒安装了，哈哈。
 
 创建第一个管理员账号：zhier/6...0
+
+创建 node 项目
+
+1. 新建任务，单纯在构建中执行 shell
+   [echo $RANDOM]
+   保存之后运行，看 output 发现成功，说明流程走通
+2. 源码管理选择 git，输入基础信息之后，再次运行，很久没反应。
+   看 output 发现卡在[git fetch --tags --progress -- https://github.com/hzy199102/zhierblog.git +refs/heads/*:refs/remotes/origin/* # timeout=10]
+   也就是说 git clone 项目很慢，为什么这样呢？
+   源码管理有 Additional Behaviours，选择新增高级的克隆行为，设定克隆和拉取操作的超时时间（分钟）：1
+   再次运行，等待一分钟之后，看到错误信息，定位是 clone 超时。
+   参考资料:[https://stackoverflow.com/questions/22013217/on-building-jenkins-project-timeout-after-10-minute-error-happens]
+   我检查项目大小，发现有 30 多 M，然后尝试在本机拉取，发现也很慢，于是确定是项目大小问题，我 vue create 了一个新的项目在 git 上，然后拉取他，发现一切顺利了。
+   这里给我的提醒是如果项目过大，一定要设置更长的超时时间，jenkins 默认的超时时间是 10 分钟。
