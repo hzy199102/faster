@@ -9,11 +9,9 @@ jenkins/jenkins:lts 比 jenkins/jenkins:alpine 大了 200 多 M，我用了大�
 [chown -R 1000:1000 /docker_volume/jenkins_home]
 如果不加这个，是启动不了 jenkins 的，因为用户权限问题，可以在 log 日志中看到，在[https://github.com/jenkinsci/docker]也能看到原因和解决方案
 
-echo $RANDOM
 npm install --registry=https://registry.npm.taobao.org
 npm run build
-echo ${PWD}
-cp -rf \${PWD}/dist/. /home/docker/nginx-docker-demo/html
+echo \${PWD}
 
 docker run -d --restart unless-stopped --name jenkins \
  -p 2201:8080 -p 2202:50000 \
@@ -55,6 +53,22 @@ jenkins 插件安装加速
 
 [cp -rf /home/docker/nginx-docker-demo/. /docker_volume/jenkins_nginx]
 
+docker_jenkins 的使用场景原本是 build 之后把编译文件直接 ssh 上传到对应的服务器，但是这里 docker_jenkins 和 docker_nginx 是同一服务器，所以直接把挂在的宿主目录指向一个地方即可。
+这个地方注意 jenkins 的用户原本是 1000，现在改为 root 了。
+
+docker run -d --restart unless-stopped --name jenkins \
+ -p 2201:8080 -p 2202:50000 \
+ -v /docker_volume/jenkins_home:/var/jenkins_home \
+ -e JAVA_OPTS=-Duser.timezone=Asia/Shanghai \
+ -u root \
+ jenkins/jenkins:lts
+
+docker run -d --rm --name nginx \
+ -p 0.0.0.0:2227:80 -p 0.0.0.0:2228:443 \
+ --volume "/docker_volume/jenkins_home/workspace":/usr/share/nginx/html \
+ --volume "/docker_volume/nginx_home/conf":/etc/nginx \
+ nginx
+
 这个暂时不用
 docker run -d --rm --name nginx \
  -p 0.0.0.0:2227:80 -p 0.0.0.0:2228:443 \
@@ -62,8 +76,30 @@ docker run -d --rm --name nginx \
  --volume "/docker_volume/jenkins_nginx/conf":/etc/nginx \
  nginx
 
+仔细看挂在的路径都是[/docker_volume/jenkins_home]和[/docker_volume/jenkins_home/workspace]
+
+构建执行 shell：
+npm install --registry=https://registry.npm.taobao.org
+npm run build
+
+如果错误提示 npm 命令没有，说明没有 node 环境。需要在 jenkins 的构建环境中配置。
+注意 jenkins 的构建环境是[Provide Node & npm bin/ folder to PATH]，如果没这个选项，说明没装 nodejs 插件，可以在 jenkins 的系统管理——全局工具配置——nodejs，如果这里也没 nodejs，
+说明 nodejs 的插件没安装，需要在 jenkins 的系统管理——插件管理中找 nodejs 安装，安装之后在全局工具配置新建对应的 nodejs，然后在 jenkins 构建环境中就能找到了。
+
+[cp -rf /docker_volume/nginx_home/html/404.html /docker_volume/jenkins_home/workspace][cp -rf /docker_volume/nginx_home/html/zhier.html /docker_volume/jenkins_home/workspace/index.html]
+
 docker run -d --rm --name nginx \
  -p 0.0.0.0:2227:80 -p 0.0.0.0:2228:443 \
  --volume "/docker_volume/jenkins_home/workspace":/usr/share/nginx/html \
  --volume "/docker_volume/nginx_home/conf":/etc/nginx \
  nginx
+
+nginx 的配置
+location 中的 alias 和 root 配置的路径不能有中文和空格，
+
+docker jenkins 删除项目之后的空间，在[/docker_volume/jenkins_home/workspace]，手动删除。
+
+博客
+[https://www.zhihu.com/question/39388850][https://www.zhihu.com/question/53068081]
+[https://hexo.io/zh-cn/docs/][https://blog.csdn.net/iamoldpan/article/details/83317463]
+[https://www.zhihu.com/question/28276750][https://www.vuepress.cn/guide/#%e5%ae%83%e6%98%af%e5%a6%82%e4%bd%95%e5%b7%a5%e4%bd%9c%e7%9a%84%ef%bc%9f]
