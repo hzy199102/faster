@@ -36,7 +36,7 @@ app.use(async (ctx, next) => {
 });
 
 // 静态文件服务
-app.use(static(path.resolve("./client")));
+app.use(static(path.resolve("../client")));
 
 // 监听全局错误事件
 app.on("error", err => {

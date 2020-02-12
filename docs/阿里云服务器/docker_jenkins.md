@@ -103,3 +103,5 @@ docker jenkins 删除项目之后的空间，在[/docker_volume/jenkins_home/wor
 [https://www.zhihu.com/question/39388850][https://www.zhihu.com/question/53068081]
 [https://hexo.io/zh-cn/docs/][https://blog.csdn.net/iamoldpan/article/details/83317463]
 [https://www.zhihu.com/question/28276750][https://www.vuepress.cn/guide/#%e5%ae%83%e6%98%af%e5%a6%82%e4%bd%95%e5%b7%a5%e4%bd%9c%e7%9a%84%ef%bc%9f]
+
+sed -i 's/\/assets/.\/assets/g' index.html

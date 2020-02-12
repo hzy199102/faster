@@ -1,0 +1,76 @@
+<html>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <head> </head>
+  <body style="display: block; margin: 0px; background: #191926;">
+    <img
+      id="BtnHide"
+      src="./img/close.png"
+      style="position: absolute; top: 20px; right: 20px; cursor: pointer; z-index: 2;"
+    />
+    <img
+      id="img"
+      style="width: 100%; height: 100%; display: block;"
+      onclick="next()"
+    />
+  </body>
+  <script src="./js/qwebchannel.js"></script>
+  <!-- <script
+    type="text/javascript"
+    src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"
+  ></script> -->
+</html>
+<script>
+  var MainInteractor = null;
+  var pos = 1;
+  var type = "";
+  var imgs = {
+    kuangjia: 8,
+    menshi: 10
+  };
+  /**
+   * 截取url上的信息，注意，在有router的情况下，不要存在#这样的特殊字符，否则会有问题
+   * @param name
+   * @returns {null}
+   */
+  var getQueryString = function(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) {
+      return unescape(r[2]);
+    } else {
+      return null;
+    }
+  };
+  var getImg = function() {
+    var str = "img/" + type + "/" + pos + ".png";
+    return str;
+  };
+  var close = function() {
+    console.log("关闭");
+    MainInteractor.hide();
+    pos = 1;
+    document.getElementById("img").src = getImg();
+  };
+  var next = function() {
+    pos++;
+    if (pos > imgs[type]) {
+      close();
+    } else {
+      document.getElementById("img").src = getImg();
+    }
+  };
+  window.onload = function() {
+    new QWebChannel(qt.webChannelTransport, channel => {
+      MainInteractor = channel.objects["TestWgtInteractor"];
+      console.log(MainInteractor);
+    });
+    // 初始化引导图类型
+    type = getQueryString("type");
+    document.getElementById("img").src = getImg();
+  };
+
+  var BtnHide = document.getElementById("BtnHide");
+  BtnHide.onclick = function() {
+    close();
+  };
+</script>
