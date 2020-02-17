@@ -445,6 +445,8 @@
           // Accept: "application/x-www-form-urlencoded",
           "Content-Type": "application/json"
         }
+      }).then(function(data) {
+        console.log(data);
       });
     }
   };
