@@ -26,6 +26,14 @@
         xhr上报数据
       </button>
       <button
+        @click="fetch({
+              fuc: 'fetch',
+              event: 'click'
+            })"
+      >
+        fetch上报数据
+      </button>
+      <button
         @click="sendImg({
               fuc: 'sendImg',
               event: 'click'
@@ -54,10 +62,10 @@
         },
         computed: {},
         created: function() {
-          this.ax({
-            fuc: "ax",
-            event: "onload"
-          });
+          // this.ax({
+          //   fuc: "ax",
+          //   event: "onload"
+          // });
           window.addEventListener("beforeunload", e => {
             // console.log("I want to cancel");
             // // Cancel the event
@@ -84,10 +92,10 @@
             // });
             // sendBeacon操作，它是异步的
             // 无论哪个浏览器都成功
-            this.sendBeacon({
-              fuc: "sendBeacon",
-              event: "beforeunload"
-            });
+            // this.sendBeacon({
+            //   fuc: "sendBeacon",
+            //   event: "beforeunload"
+            // });
           });
         },
         // destroyed是在被vue 被销毁的时候才会触发,但是页面刷新并没有触发vue 的销毁,它仅仅是浏览器的主动行为
@@ -138,6 +146,21 @@
             });
             img.onload = () => (img = null);
             img.src = `${url}?${params.join("&")}`;
+          },
+          fetch: function(params) {
+            console.log("fetch上报");
+            fetch(this.url, {
+              method: "post",
+              // mode: "no-cors",
+              // mode: "cors",
+              // body: { name: "hzy" },
+              body: JSON.stringify({ name: "hzy" }),
+              headers: {
+                Accept: "application/x-www-form-urlencoded",
+                "Content-Type": "application/json"
+                // "Content-Type": "application/x-www-form-urlencoded"
+              }
+            });
           },
           ax: function(params) {
             var url = this.url;

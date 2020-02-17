@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>埋点网页</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <!-- <script src="js/sdk.js"></script> -->
+    <script src="js/data.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <h1>埋点测试，everybody，嗨起来！</h1>
+      <div style="float: left; width: 30%;">
+        <div>发送参数列表</div>
+
+        <table style="margin-top: 10px;">
+          <tr>
+            <th>参数名</th>
+            <th>数值</th>
+            <th>操作</th>
+          </tr>
+          <tr v-for="(item,index) in list" :key="index">
+            <td>
+              <div v-if="item.required">{{ item.name }}</div>
+              <input v-else v-model="item.name" style="max-width: 80px;" />
+            </td>
+            <td><input v-model="item.value" /></td>
+            <td>
+              <div
+                v-if="!item.required"
+                class="btn"
+                style="background: burlywood;"
+                @click="del(index)"
+              >
+                删除
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <div
+          class="btn"
+          style="margin-top: 10px; background: cadetblue;"
+          @click="add"
+        >
+          添加参数
+        </div>
+        <div
+          class="btn"
+          style="margin-top: 10px; background: cadetblue;"
+          @click="send"
+        >
+          发送埋点数据
+        </div>
+      </div>
+      <div style="float: left;">
+        <div>参考参数列表</div>
+        <table style="margin-top: 10px;">
+          <tr>
+            <th>参数名</th>
+            <th>是否必选</th>
+            <th>类型</th>
+            <th>描述</th>
+          </tr>
+          <tr v-for="item in paramsList" :key="item.name">
+            <td>{{ item.name }}</td>
+            <td>{{ item.required ? '是' : '否' }}</td>
+            <td>{{ item.type }}</td>
+            <td>{{ item.desc }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <script>
+      (function() {
+        window.Report = window.Report || [];
+        window.Report.methods = "_init track defineCom".split(" ");
+        window.Report.factory = function(b) {
+          return function() {
+            var a = Array.prototype.slice.call(arguments);
+            a.unshift(b);
+            window.Report.push(a);
+            return window.Report;
+          };
+        };
+        for (var i = 0; i < window.Report.methods.length; i++) {
+          var key = window.Report.methods[i];
+          window.Report[key] = window.Report.factory(key);
+        }
+        window.Report.load = function(b, x) {
+          if (!document.getElementById("report-js")) {
+            var a = document.createElement("script");
+            var verDate = new Date();
+            var verStr =
+              verDate.getFullYear().toString() +
+              verDate.getMonth().toString() +
+              verDate.getDate().toString();
+
+            a.type = "text/javascript";
+            a.id = "report-js";
+            a.async = !0;
+            a.src = "http://127.0.0.1:8108/js/sdk.js?v=" + verStr;
+            a.onerror = function() {
+              console.log("report sdk load failed");
+            };
+            var c = document.getElementsByTagName("script")[0];
+            c.parentNode.insertBefore(a, c);
+            window.Report._init(b);
+          }
+        };
+        window.Report.load({ debug: true });
+      })();
+    </script>
+    <script type="text/javascript">
+      var app = new Vue({
+        el: "#app",
+        data() {
+          return {
+            n: 1,
+            paramsList: window.basic,
+            list: window.basic.filter(b => {
+              return b.required;
+            })
+          };
+        },
+        computed: {},
+        created() {
+          this.send();
+          this.send();
+          this.send();
+          this.send();
+        },
+        methods: {
+          add() {
+            this.list.push({
+              name: "",
+              value: ""
+            });
+          },
+          del(pos) {
+            this.list.splice(pos, 1);
+          },
+          send() {
+            var params = {};
+            for (var i = 0, len = this.list.length; i < len; i++) {
+              params[this.list[i].name] = this.list[i].value;
+            }
+            Report.track(params);
+          }
+        }
+      });
+    </script>
+    <style>
+      body {
+        font-size: 14px;
+        font-family: "Microsoft YaHei";
+        /* margin: 0px; */
+      }
+      .btn {
+        height: 30px;
+        line-height: 30px;
+        padding: 0px 10px;
+        display: inline-block;
+        cursor: pointer;
+      }
+      table {
+        border-top: 1px solid #999;
+        border-left: 1px solid #999;
+        border-spacing: 0;
+      }
+      table td,
+      th {
+        padding: 10px 10px;
+        border-bottom: 1px solid #999;
+        border-right: 1px solid #999;
+        max-width: 300px;
+        word-wrap: break-word;
+      }
+      table input {
+        height: 30px;
+      }
+    </style>
+  </body>
+</html>

@@ -66,9 +66,9 @@ app.use(
       // Response to preflight request doesn't pass access control check:
       // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.
       // The credentials mode of requests initiated by the XMLHttpRequest is controlled by the withCredentials attribute.
-      // return "*";
+      return "*,*";
       // 这样就动态返回请求域了
-      return ctx.header.origin;
+      // return ctx.header.origin;
       // return "http://127.0.0.1:12602";
       // console.log(ctx.url);
       // if (ctx.url === "/") {
@@ -81,7 +81,7 @@ app.use(
     maxAge: 5,
     // preflightContinue: false,
     credentials: true,
-    allowMethods: ["GET", "POST", "DELETE"],
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS "],
     // 如果是自定义设置，前端headers自定义传递的东西，这里一定要配置接受，
     // 如果不配置，在前端console也会提示错误原因，如以下就是缺少token
     // has been blocked by CORS policy: Request header field token is not allowed by Access-Control-Allow-Headers in preflight response.
