@@ -3,7 +3,7 @@ var basic = [
     name: "pcode",
     type: "String",
     desc: "产品编码",
-    value: "10010",
+    value: "-1",
     required: true
   },
   {

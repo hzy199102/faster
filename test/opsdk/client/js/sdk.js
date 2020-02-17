@@ -6,9 +6,10 @@
  * 1. _init：初始化函数，sdk初始化前的埋点可通过队列在初始化之后一并处理
  * 2. track：发送http请求，内部包含validate：数据校验
  * 3. defineCom: 存储埋点基础参数，不用在每一次上报中都让用户可以传递
- * 4. defaluts: 基础配置，包括校验规则
+ * 4. defaluts: 基础配置，包括校验规则，必填字段，可初始化的公共字段
  * 5. log: 日志
  * 6. getUUId: 生成埋点记录唯一标识
+ * 7. listen: 注册监听事件，包括：error事件
  *
  *
  */
@@ -209,10 +210,19 @@
       query: {
         desc: "自定义数据（json格式）",
         validate: function(val) {
-          return defaults.validate._isString(val);
+          if (defaults.validate._isString(val)) {
+            try {
+              return typeof JSON.parse(val) === "object";
+            } catch (error) {
+              return false;
+            }
+          } else {
+            return false;
+          }
         }
       }
     },
+    // 必填字段
     trackRequired: [
       "pcode",
       "fncode",
@@ -220,11 +230,121 @@
       "fngroup",
       "ver",
       "gid",
-      "sessionid",
-      "trigertime"
+      "sessionid"
     ],
-    logCode: {}
+    // 公共字段
+    commonField: [
+      "pcode",
+      "ver",
+      "gid",
+      "sessionid",
+      "dognum",
+      "hardwareid",
+      "vername",
+      "ver2",
+      "platform",
+      "mac",
+      "sys",
+      "sysver"
+    ],
+    logCode: {
+      VALIDATE_ERROR: 1
+    }
   };
+
+  /**
+   * 接口数据校验，并且自动补全一些字段，包括：trigertime和已经初始化的defaults.trackCom基础数据
+   * @param {*} obj
+   *   上报接口数据对象
+   */
+  var validate = function(obj) {
+    if (typeof obj !== "object") {
+      window.Report.onError({
+        code: defaults.logCode.VALIDATE_ERROR,
+        msg: "传递对象形式的埋点数据"
+      });
+      return false;
+    }
+    // defaults.trackCom基础数据自动补全，前提是埋点数据不包含这个属性
+    for (var key in defaults.trackCom) {
+      if (!obj[key]) {
+        obj[key] = defaults.trackCom[key];
+      }
+    }
+    // sdk自动补全字段：trigertime
+    obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
+    // sdk检验必填字段是否全部填写
+    for (var i = 0, len = defaults.trackRequired.length; i < len; i++) {
+      if (typeof obj[defaults.trackRequired[i]] === "undefined") {
+        window.Report.onError({
+          code: defaults.logCode.VALIDATE_ERROR,
+          msg:
+            "缺少必填字段：" +
+            defaults.trackRequired[i] +
+            "（" +
+            defaults.validate[defaults.trackRequired[i]].desc +
+            "）"
+        });
+        return false;
+      }
+    }
+    // sdk校验字段的合法性
+    for (var key in obj) {
+      if (
+        defaults.validate[key] &&
+        !defaults.validate[key].validate(obj[key])
+      ) {
+        window.Report.onError({
+          code: defaults.logCode.VALIDATE_ERROR,
+          msg:
+            "字段：" + key + "（" + defaults.validate[key].desc + "）未通过校验"
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * 时间格式化
+   * @param {*} fmt
+   *   时间格式
+   * @param {*} date
+   *   时间，Date格式
+   */
+  var dateFormat = function(fmt, date) {
+    var o = {
+      "M+": date.getMonth() + 1, //月份
+      "d+": date.getDate(), //日
+      "h+": date.getHours(), //小时
+      "m+": date.getMinutes(), //分
+      "s+": date.getSeconds(), //秒
+      "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+      S: date.getMilliseconds() //毫秒
+    };
+    if (/(y+)/.test(fmt))
+      fmt = fmt.replace(
+        RegExp.$1,
+        (date.getFullYear() + "").substr(4 - RegExp.$1.length)
+      );
+    for (var k in o)
+      if (new RegExp("(" + k + ")").test(fmt))
+        fmt = fmt.replace(
+          RegExp.$1,
+          RegExp.$1.length == 1
+            ? o[k]
+            : ("00" + o[k]).substr(("" + o[k]).length)
+        );
+    return fmt;
+  };
+
+  /**
+   * 空函数
+   */
+  var emptyfn = function() {
+    console.log("空方法");
+  };
+
   var Report = function() {
     // sdk异步加载，部分方法可能在加载完成之前就已经被调用，所以需要先记录在队列中，等sdk加载完毕之后调用，
     // 前提一定是_init方法被调用
@@ -253,7 +373,6 @@
         break;
       }
     }
-
     return;
   };
 
@@ -268,64 +387,63 @@
     var params = opts || {};
     this.url = params.debug ? defaults.url.test : defaults.url.prod;
     eventFuc && eventFuc();
-    console.log(this);
+    // console.log(this);
   };
 
   /**
-   * 存储埋点基础参数，不用在每一次上报中都让用户可以传递
+   * 初始化埋点基础参数，不用在每一次上报中都让用户可以传递
+   * 具体参考commonField
+   * 需要校验通过才能进行初始化
    *
    */
   Report.prototype.defineCom = function(opts) {
     if (typeof opts !== "object") {
       return false;
     }
-    defaults.defineCom = opts;
+    // defaults.trackCom
+    for (var key in opts) {
+      // 传递参数是公共参数，并且通过校验，才进行初始化
+      if (
+        defaults.commonField.indexOf(key) > -1 &&
+        defaults.validate[key].validate(opts[key])
+      ) {
+        defaults.trackCom[key] = opts[key];
+      }
+    }
     return true;
   };
 
   /**
-   * 存储埋点基础参数，不用在每一次上报中都让用户可以传递
+   * 获取埋点基础参数
+   * 注意是个clone对象，防止defaults.trackCom被随意改动
    *
    */
-  Report.prototype.getCom = function(opts) {
-    return Object.assign({}, defaults.defineCom);
+  Report.prototype.getCom = function() {
+    // return defaults.trackCom;
+    return Object.assign({}, defaults.trackCom);
+  };
+
+  /**
+   * 注册监听函数，支持监听错误事件
+   */
+  Report.prototype.listen = function(options) {
+    this.onError = options.onError || emptyfn; //抛出异常
   };
 
   /**
    * 发送请求，需要进行数据校验
    */
   Report.prototype.track = function(obj) {
-    var validate = function(obj) {
-      console.log("validate ...");
-      if (typeof obj !== "object") {
-        return false;
-      }
-      for (var i = 0, len = defaults.trackRequired.length; i < len; i++) {
-        if (typeof obj[defaults.trackRequired[i]] === "undefined") {
-          //   return false;
-        }
-      }
-      for (var key in obj) {
-        if (
-          defaults.validate[key] &&
-          !defaults.validate[key].validate(obj[key])
-        ) {
-          //   return false;
-        }
-      }
-      return true;
-    };
     if (validate(obj)) {
       console.log("reprot track:", obj);
       fetch(this.url + "/receive", {
         method: "post",
         // mode: "no-cors",
         // mode: "cors",
-        body: obj,
+        body: JSON.stringify(obj),
         headers: {
-          Accept: "application/x-www-form-urlencoded",
+          // Accept: "application/x-www-form-urlencoded",
           "Content-Type": "application/json"
-          // "Content-Type": "application/x-www-form-urlencoded"
         }
       });
     }
