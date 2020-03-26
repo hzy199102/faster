@@ -11,6 +11,12 @@
  * 6. getUUId: 生成埋点记录唯一标识
  * 7. listen: 注册监听事件，包括：error事件
  *
+ * v1.1（当前版本）
+ * 1. 现在不论测试数据还是正式数据一律使用url.prod的地址去上报埋点，但是接口参数加入debug去判断：true，测试数据，false，正式数据，默认是正式数据。
+ *
+ *
+ * v1.2（下个版本）
+ * 1. 解决http请求fetch的兼容性问题，全面支持ie
  *
  */
 
@@ -78,6 +84,12 @@
           "事件触发事件 格式：'yyyy/MM/dd HH:mm:ss SSS' 2012/10/15 18:47:46 203",
         validate: function(val) {
           return defaults.validate._isStringRequired(val);
+        }
+      },
+      debug: {
+        desc: "是否测试数据",
+        validate: function(val) {
+          return defaults.validate._isBoolean(val);
         }
       },
       dognum: {
@@ -271,8 +283,9 @@
         obj[key] = defaults.trackCom[key];
       }
     }
-    // sdk自动补全字段：trigertime
+    // sdk自动补全字段：trigertime，debug
     obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
+    obj.debug = window.Report.debug;
     // sdk检验必填字段是否全部填写
     for (var i = 0, len = defaults.trackRequired.length; i < len; i++) {
       if (typeof obj[defaults.trackRequired[i]] === "undefined") {
@@ -380,12 +393,15 @@
    * 初始化
    * @params
    *  opts: 配置参数
-   *   debug: 测试环境，默认false
+   *   debug: 是否测试环境，默认false（正式环境）
    *  eventFuc: 事件队列，在sdk没初始化之前提前触发的事件都会加入事件队列，在sdk初始化之后，立即执行。
    */
   Report.prototype._init = function(opts, eventFuc) {
     var params = opts || {};
-    this.url = params.debug ? defaults.url.test : defaults.url.prod;
+    // this.url = params.debug ? defaults.url.test : defaults.url.prod;
+    // 在v1.1+版本，不论测试数据还是正式数据一律使用url.prod的地址去上报埋点，但是接口参数加入debug去判断：true，测试数据，false，正式数据，默认是正式数据。
+    this.url = defaults.url.prod;
+    this.debug = typeof params.debug === "boolean" ? params.debug : false;
     eventFuc && eventFuc();
     // console.log(this);
   };
@@ -434,6 +450,7 @@
    * 发送请求，需要进行数据校验
    */
   Report.prototype.track = function(obj) {
+    // console.log("track");
     if (validate(obj)) {
       console.log("reprot track:", obj);
       fetch(this.url + "/receive", {

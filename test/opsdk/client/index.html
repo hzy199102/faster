@@ -99,7 +99,10 @@
             a.type = "text/javascript";
             a.id = "report-js";
             a.async = !0;
-            a.src = "http://127.0.0.1:8108/js/sdk.js?v=" + verStr;
+            // a.src = "http://127.0.0.1:8308/js/wdc.js?v=" + verStr;
+            a.src =
+              "http://aecore-static.glodon.com/prod-ops/sdk/isv/wdc.js?v=" +
+              verStr;
             a.onerror = function() {
               console.log("report sdk load failed");
             };
@@ -108,7 +111,7 @@
             window.Report._init(b);
           }
         };
-        window.Report.load({ debug: false });
+        window.Report.load({ debug: true });
       })();
     </script>
     <script type="text/javascript">

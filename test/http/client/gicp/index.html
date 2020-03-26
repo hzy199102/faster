@@ -1,0 +1,168 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>行业云计价广告位</title>
+    <style type="text/css">
+      .item {
+        width: calc(25% - 0.75px);
+        float: left;
+        cursor: pointer;
+        position: relative;
+        margin-left: 1px;
+      }
+      .second_row {
+        margin-top: 1px;
+      }
+      .item .img {
+        width: 100%;
+      }
+      .item .title {
+        text-align: center;
+        width: 100%;
+        position: absolute;
+        color: #ffffff;
+        bottom: calc(5%);
+        left: 0px;
+        z-index: 3;
+        display: none;
+        font-size: 16px;
+      }
+      .item .opacity {
+        opacity: 0.3;
+        width: 100%;
+        position: absolute;
+        height: calc(28%);
+        background: #000000;
+        bottom: 0px;
+        left: 0px;
+        z-index: 2;
+        display: none;
+      }
+    </style>
+  </head>
+  <body style="margin: 0px;">
+    <div
+      class="item"
+      style="margin-left: 0px;"
+      onmouseover="mouseOver(1)"
+      onmouseout="mouseOut(1)"
+    >
+      <img id="img_1" class="img" src="./img/default.png" />
+      <div id="title_1" class="title"></div>
+      <div id="opacity_1" class="opacity"></div>
+    </div>
+    <div class="item" onmouseover="mouseOver(2)" onmouseout="mouseOut(2)">
+      <img id="img_2" class="img" src="./img/default.png" />
+      <div id="title_2" class="title"></div>
+      <div id="opacity_2" class="opacity"></div>
+    </div>
+    <div class="item" onmouseover="mouseOver(3)" onmouseout="mouseOut(3)">
+      <img id="img_3" class="img" src="./img/default.png" />
+      <div id="title_3" class="title"></div>
+      <div id="opacity_3" class="opacity"></div>
+    </div>
+    <div class="item" onmouseover="mouseOver(4)" onmouseout="mouseOut(4)">
+      <img id="img_4" class="img" src="./img/default.png" />
+      <div id="title_4" class="title"></div>
+      <div id="opacity_4" class="opacity"></div>
+    </div>
+    <div
+      class="item second_row"
+      style="margin-left: 0px;"
+      onmouseover="mouseOver(5)"
+      onmouseout="mouseOut(5)"
+    >
+      <img id="img_5" class="img" src="./img/default.png" />
+      <div id="title_5" class="title"></div>
+      <div id="opacity_5" class="opacity"></div>
+    </div>
+    <div
+      class="item second_row"
+      onmouseover="mouseOver(6)"
+      onmouseout="mouseOut(6)"
+    >
+      <img id="img_6" class="img" src="./img/default.png" />
+      <div id="title_6" class="title"></div>
+      <div id="opacity_6" class="opacity"></div>
+    </div>
+    <div
+      class="item second_row"
+      onmouseover="mouseOver(7)"
+      onmouseout="mouseOut(7)"
+    >
+      <img id="img_7" class="img" src="./img/default.png" />
+      <div id="title_7" class="title"></div>
+      <div id="opacity_7" class="opacity"></div>
+    </div>
+    <div
+      class="item second_row"
+      onmouseover="mouseOver(8)"
+      onmouseout="mouseOut(8)"
+    >
+      <img id="img_8" class="img" src="./img/default.png" />
+      <div id="title_8" class="title"></div>
+      <div id="opacity_8" class="opacity"></div>
+    </div>
+  </body>
+</html>
+<script>
+  // https://www.jianshu.com/p/918c63045bc3/
+  function mouseOver(id) {
+    document.getElementById("title_" + id).style.display = "block";
+    document.getElementById("opacity_" + id).style.display = "block";
+  }
+  function mouseOut(id) {
+    document.getElementById("title_" + id).style.display = "none";
+    document.getElementById("opacity_" + id).style.display = "none";
+  }
+  window.onload = function() {
+    // var Authorization = "MTIzODY=";
+    // var request_url = "http://192.168.130.40/portal/article/list?filter=" + encodeURIComponent(JSON.stringify({
+    //   category: "N18814"
+    // }));
+    var Authorization = "MTI0ODE=";
+    var request_url =
+      "https://aecore.glodon.com/ops/portal/article/list?filter=" +
+      encodeURIComponent(
+        JSON.stringify({
+          category: "N99468"
+        })
+      ) +
+      "&sort=" +
+      encodeURIComponent(
+        JSON.stringify({
+          createdAt: 0
+        })
+      );
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", request_url, true);
+    // 设置请求头
+    xhr.setRequestHeader("Authorization", Authorization);
+    xhr.timeout = 3000;
+    // 请求成功回调函数
+    xhr.onload = function(e) {
+      var status = xhr.status;
+      if ((status >= 200 && status < 300) || status === 304) {
+        var res = JSON.parse(xhr.response);
+        if (res.code === 200 && res.data.list.length) {
+          for (var i = 1, len = res.data.list.length + 1; i < len; i++) {
+            if (i > 8) {
+              break;
+            }
+            var img = document.getElementById("img_" + i);
+            img.src = res.data.list[i - 1].thumb;
+            img.setAttribute("link", res.data.list[i - 1].link);
+            img.onclick = function(e) {
+              PromotionInteractor.loadUrlInBrowser(
+                e.target.getAttribute("link")
+              );
+            };
+            var title = document.getElementById("title_" + i);
+            title.innerHTML = res.data.list[i - 1].title;
+          }
+        }
+      }
+    };
+    xhr.send();
+  };
+</script>

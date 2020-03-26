@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>行业云计价离线页</title>
+  </head>
+  <body style="margin: 0px; background: #ebebeb;">
+    <img src="./img/icon.png" style="margin-top: 150px;"/>
+    <div id="refresh"></div>
+  </body>
+</html>
+<script>
+  /**
+   * 截取url上的信息，注意，在有router的情况下，不要存在#这样的特殊字符，否则会有问题
+   * @param name
+   * @returns {null}
+   */
+  var getQueryString = function(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) {
+      return unescape(r[2]);
+    } else {
+      return null;
+    }
+  };
+  window.onload = function() {
+    document.getElementById('refresh').onclick = function(e) {
+      var interactor = getQueryString('interactor');
+      window[interactor].reload();
+    }
+  };
+</script>
+<style>
+#refresh {
+  margin-left: 103px; 
+  margin-top: 10px; 
+  cursor: pointer;
+  width: 64px;
+  height: 22px;
+  background: url("./img/default.png");
+}
+#refresh:hover {
+  background: url("./img/hover.png");
+}
+#refresh:active {
+  background: url("./img/click.png");
+}
+</style>
