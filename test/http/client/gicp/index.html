@@ -106,6 +106,50 @@
   </body>
 </html>
 <script>
+  (function() {
+    window.Report = window.Report || [];
+    window.Report.methods = "_init track defineCom listen".split(" ");
+    window.Report.factory = function(b) {
+      return function() {
+        var a = Array.prototype.slice.call(arguments);
+        a.unshift(b);
+        window.Report.push(a);
+        return window.Report;
+      };
+    };
+    for (var i = 0; i < window.Report.methods.length; i++) {
+      var key = window.Report.methods[i];
+      window.Report[key] = window.Report.factory(key);
+    }
+    window.Report.load = function(b, x) {
+      if (!document.getElementById("report-js")) {
+        var a = document.createElement("script");
+        var verDate = new Date();
+        var verStr =
+          verDate.getFullYear().toString() +
+          verDate.getMonth().toString() +
+          verDate.getDate().toString();
+
+        a.type = "text/javascript";
+        a.id = "report-js";
+        a.async = !0;
+        // a.src = "http://127.0.0.1:8308/js/wdc.js?v=" + verStr;
+        a.src =
+          "http://aecore-static.glodon.com/prod-ops/sdk/isv/wdc.js?v=" + verStr;
+        // a.src = "http://127.0.0.1:8308/wdc.js?v=" + verStr;
+        a.onerror = function() {
+          console.log("report sdk load failed");
+        };
+        var c = document.getElementsByTagName("script")[0];
+        c.parentNode.insertBefore(a, c);
+        window.Report._init(b);
+      }
+    };
+    window.Report.load({ debug: true });
+  })();
+</script>
+<script>
+  var doWdc = false;
   // https://www.jianshu.com/p/918c63045bc3/
   function mouseOver(id) {
     document.getElementById("title_" + id).style.display = "block";
@@ -115,11 +159,43 @@
     document.getElementById("title_" + id).style.display = "none";
     document.getElementById("opacity_" + id).style.display = "none";
   }
+  function w_communication(obj) {
+    var res = JSON.parse(obj);
+    if (res.type === "wdc") {
+      console.log("stopWdcTimer");
+      doWdc = true;
+      Report.defineCom(res.obj);
+      Report.listen({
+        onError: function(e) {
+          console.log(e);
+        }
+      });
+      PromotionInteractor.eventNotify(
+        "MicroCommunityInteractor",
+        "communication",
+        JSON.stringify({
+          type: "stopWdcTimer"
+        })
+      );
+    }
+  }
+  function w_logout(obj) {
+    location.reload();
+  }
+  function w_login(obj) {
+    location.reload();
+  }
   window.onload = function() {
     // var Authorization = "MTIzODY=";
     // var request_url = "http://192.168.130.40/portal/article/list?filter=" + encodeURIComponent(JSON.stringify({
     //   category: "N18814"
     // }));
+    PromotionInteractor.eventRegister("communication", "w_communication");
+    /**
+     * 容器监听登录登出指定写法
+     */
+    PromotionInteractor.eventRegister("LogoutCallBack", "w_logout");
+    PromotionInteractor.eventRegister("LoginCallBack", "w_login");
     var Authorization = "MTI0ODE=";
     var request_url =
       "https://aecore.glodon.com/ops/portal/article/list?filter=" +
@@ -152,10 +228,18 @@
             var img = document.getElementById("img_" + i);
             img.src = res.data.list[i - 1].thumb;
             img.setAttribute("link", res.data.list[i - 1].link);
+            img.setAttribute("pid", res.data.list[i - 1].id);
             img.onclick = function(e) {
               PromotionInteractor.loadUrlInBrowser(
                 e.target.getAttribute("link")
               );
+              if (doWdc) {
+                Report.track({
+                  fncode: "800001",
+                  fnname: "宣传栏",
+                  pid: e.target.getAttribute("pid")
+                });
+              }
             };
             var title = document.getElementById("title_" + i);
             title.innerHTML = res.data.list[i - 1].title;

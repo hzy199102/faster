@@ -262,7 +262,15 @@ if (typeof Object.assign != "function") {
       }
     },
     // 必填字段
-    trackRequired: ["pcode", "fncode", "fnname", "fngroup", "ver", "sessionid"],
+    trackRequired: [
+      "pcode",
+      "fncode",
+      "fnname",
+      "fngroup",
+      "ver",
+      "sessionid",
+      "debug"
+    ],
     // 公共字段
     commonField: [
       "pcode",
@@ -277,12 +285,14 @@ if (typeof Object.assign != "function") {
       "platform",
       "mac",
       "sys",
-      "sysver"
+      "sysver",
+      "debug"
     ],
     logCode: {
-      VALIDATE_ERROR: 1, // 校验错误
-      ANONYMITY_ERROR: 2, // 匿名错误
-      SURPLUS_ERROR: 3 // 多余字段，不被处理的字段
+      TYPE_ERROR: 1, // 数据格式错误
+      VALIDATE_ERROR: 2, // 校验错误
+      ANONYMITY_ERROR: 3, // 匿名错误
+      SURPLUS_ERROR: 4 // 多余字段，不被处理的字段
     }
   };
 
@@ -294,29 +304,35 @@ if (typeof Object.assign != "function") {
   var validate = function(obj) {
     if (typeof obj !== "object") {
       window.Report.onError({
-        code: defaults.logCode.VALIDATE_ERROR,
-        msg: "传递对象形式的埋点数据"
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "传递对象形式的埋点数据，track失败"
       });
       return false;
     }
+    // sdk自动补全字段：trigertime，debug
+    obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
+    obj.debug = window.Report.debug;
+    // defaults.trackCom基础数据自动补全，前提是埋点数据不包含这个属性
+    for (var key in defaults.trackCom) {
+      // typeof obj[key] === "undefined"(缺陷: 如果这个key定义了，并且就是很2的赋值为undefined）
+      if (!obj.hasOwnProperty(key)) {
+        obj[key] = defaults.trackCom[key];
+      }
+      // 为了兼容v1.3之前版本的debug埋点情况
+      if (key === "debug") {
+        obj[key] = defaults.trackCom[key];
+      }
+    }
+
     // 检查是否匿名用户，目前不支持匿名用户上传埋点，判断条件：hardwareid，dognum，gid均为空
     if (!obj.hardwareid && !obj.dognum && !obj.gid) {
       window.Report.onError({
         code: defaults.logCode.ANONYMITY_ERROR,
         msg:
-          "匿名用户无法上报埋点，请传递hardwareid，dognum，gid中的至少一个确认用户身份"
+          "匿名用户无法上报埋点，请传递hardwareid，dognum，gid中的至少一个确认用户身份，track失败"
       });
       return false;
     }
-    // defaults.trackCom基础数据自动补全，前提是埋点数据不包含这个属性
-    for (var key in defaults.trackCom) {
-      if (!obj[key]) {
-        obj[key] = defaults.trackCom[key];
-      }
-    }
-    // sdk自动补全字段：trigertime，debug
-    obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
-    obj.debug = window.Report.debug;
     // sdk检验必填字段是否全部填写
     for (var i = 0, len = defaults.trackRequired.length; i < len; i++) {
       if (typeof obj[defaults.trackRequired[i]] === "undefined") {
@@ -324,7 +340,7 @@ if (typeof Object.assign != "function") {
           code: defaults.logCode.VALIDATE_ERROR,
           msg: `缺少必填字段：${defaults.trackRequired[i]}（${
             defaults.validate[defaults.trackRequired[i]].desc
-          }）`
+          }），track失败`
         });
         return false;
       }
@@ -335,14 +351,14 @@ if (typeof Object.assign != "function") {
         if (!defaults.validate[key].validate(obj[key])) {
           window.Report.onError({
             code: defaults.logCode.VALIDATE_ERROR,
-            msg: `字段：${key}（${defaults.validate[key].desc}）未通过校验`
+            msg: `字段：${key}（${defaults.validate[key].desc}）未通过校验，track失败`
           });
           return false;
         }
       } else {
         window.Report.onError({
           code: defaults.logCode.SURPLUS_ERROR,
-          msg: `多余字段：${key}，不会被埋点处理`
+          msg: `多余字段：${key}，不会被track处理`
         });
       }
     }
@@ -445,16 +461,29 @@ if (typeof Object.assign != "function") {
    */
   Report.prototype.defineCom = function(opts) {
     if (typeof opts !== "object") {
+      window.Report.onError({
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "defineCom只支持对象格式的参数"
+      });
       return false;
     }
     // defaults.trackCom
     for (var key in opts) {
       // 传递参数是公共参数，并且通过校验，才进行初始化
-      if (
-        defaults.commonField.indexOf(key) > -1 &&
-        defaults.validate[key].validate(opts[key])
-      ) {
-        defaults.trackCom[key] = opts[key];
+      if (defaults.commonField.indexOf(key) > -1) {
+        if (defaults.validate[key].validate(opts[key])) {
+          defaults.trackCom[key] = opts[key];
+        } else {
+          window.Report.onError({
+            code: defaults.logCode.VALIDATE_ERROR,
+            msg: `字段：${key}（${defaults.validate[key].desc}）未通过校验，不会被defineCom处理`
+          });
+        }
+      } else {
+        window.Report.onError({
+          code: defaults.logCode.SURPLUS_ERROR,
+          msg: `多余字段：${key}，不会被defineCom处理`
+        });
       }
     }
     return true;
@@ -471,11 +500,36 @@ if (typeof Object.assign != "function") {
   };
 
   /**
+   * 删除指定初始化的埋点参数
+   * 具体参考commonField
+   *
+   */
+  Report.prototype.delCom = function(opts) {
+    if (Object.prototype.toString.call(opts) !== "[object Array]") {
+      window.Report.onError({
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "delCom只支持数组格式的参数"
+      });
+      return false;
+    }
+    // defaults.trackCom
+    for (var i = 0, len = opts.length; i < len; i++) {
+      delete defaults.trackCom[opts[i]];
+    }
+    return true;
+  };
+
+  /**
    * 注册监听函数，支持监听错误事件
    */
   Report.prototype.listen = function(options) {
     this.onError = options.onError || emptyfn; //抛出异常
   };
+
+  /**
+   * 版本
+   */
+  Report.prototype.version = "1.3";
 
   /**
    * 发送请求，需要进行数据校验

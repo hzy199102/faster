@@ -4,3 +4,4 @@ test/pic/source/badge
 test/shanshanmanhua/source
 node_modules
 test/shanshanmanhua/url
+test/opsdk/webpack/node_modules
