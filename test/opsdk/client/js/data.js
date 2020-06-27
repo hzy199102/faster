@@ -57,6 +57,11 @@ var basic = [
     required: true
   },
   {
+    name: "debug",
+    type: "boolean",
+    desc: "是否测试数据，可在sdk初始化的时候作为参数传递"
+  },
+  {
     name: "dognum",
     type: "String",
     desc: "加密锁号"

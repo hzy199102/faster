@@ -6,4 +6,4 @@ node_modules
 test/shanshanmanhua/url
 test/http/client/waibao
 test/http/client/waibao2
-
+test/opsdk/webpack/node_modules

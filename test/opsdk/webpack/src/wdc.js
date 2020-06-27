@@ -11,9 +11,42 @@
  * 6. getUUId: 生成埋点记录唯一标识
  * 7. listen: 注册监听事件，包括：error事件
  *
+ * v1.1
+ * 1. 现在不论测试数据还是正式数据一律使用url.prod的地址去上报埋点，但是接口参数加入debug去判断：true，测试数据，false，正式数据，默认是正式数据。
+ *
+ *
+ * v1.2（当前版本）
+ * 1. 解决http请求fetch的兼容性问题，全面支持ie
+ * 2. webpack压缩加密
+ *
+ * v1.3(下个版本)
+ * 1. getCom接口兼容IE，即支持Object.assign
+ * 2. gid,deviceId,dognum包含其中一处才可以提交埋点，不支持匿名埋点
  *
  */
+import "whatwg-fetch";
+require("es6-promise/auto");
+if (typeof Object.assign != "function") {
+  Object.assign = function(target) {
+    "use strict";
+    if (target == null) {
+      throw new TypeError("Cannot convert undefined or null to object");
+    }
 
+    target = Object(target);
+    for (var index = 1; index < arguments.length; index++) {
+      var source = arguments[index];
+      if (source != null) {
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+    }
+    return target;
+  };
+}
 (function(window, undefined) {
   var defaults = {
     url: {
@@ -78,6 +111,12 @@
           "事件触发事件 格式：'yyyy/MM/dd HH:mm:ss SSS' 2012/10/15 18:47:46 203",
         validate: function(val) {
           return defaults.validate._isStringRequired(val);
+        }
+      },
+      debug: {
+        desc: "是否测试数据",
+        validate: function(val) {
+          return defaults.validate._isBoolean(val);
         }
       },
       dognum: {
@@ -229,12 +268,13 @@
       "fnname",
       "fngroup",
       "ver",
-      "gid",
-      "sessionid"
+      "sessionid",
+      "debug"
     ],
     // 公共字段
     commonField: [
       "pcode",
+      "fngroup",
       "ver",
       "gid",
       "sessionid",
@@ -245,10 +285,14 @@
       "platform",
       "mac",
       "sys",
-      "sysver"
+      "sysver",
+      "debug"
     ],
     logCode: {
-      VALIDATE_ERROR: 1
+      TYPE_ERROR: 1, // 数据格式错误
+      VALIDATE_ERROR: 2, // 校验错误
+      ANONYMITY_ERROR: 3, // 匿名错误
+      SURPLUS_ERROR: 4 // 多余字段，不被处理的字段
     }
   };
 
@@ -260,46 +304,62 @@
   var validate = function(obj) {
     if (typeof obj !== "object") {
       window.Report.onError({
-        code: defaults.logCode.VALIDATE_ERROR,
-        msg: "传递对象形式的埋点数据"
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "传递对象形式的埋点数据，track失败"
       });
       return false;
     }
+    // sdk自动补全字段：trigertime，debug
+    obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
+    obj.debug = window.Report.debug;
     // defaults.trackCom基础数据自动补全，前提是埋点数据不包含这个属性
     for (var key in defaults.trackCom) {
-      if (!obj[key]) {
+      // typeof obj[key] === "undefined"(缺陷: 如果这个key定义了，并且就是很2的赋值为undefined）
+      if (!obj.hasOwnProperty(key)) {
+        obj[key] = defaults.trackCom[key];
+      }
+      // 为了兼容v1.3之前版本的debug埋点情况
+      if (key === "debug") {
         obj[key] = defaults.trackCom[key];
       }
     }
-    // sdk自动补全字段：trigertime
-    obj.trigertime = dateFormat("yyyy/MM/dd hh:mm:ss S", new Date());
+
+    // 检查是否匿名用户，目前不支持匿名用户上传埋点，判断条件：hardwareid，dognum，gid均为空
+    if (!obj.hardwareid && !obj.dognum && !obj.gid) {
+      window.Report.onError({
+        code: defaults.logCode.ANONYMITY_ERROR,
+        msg:
+          "匿名用户无法上报埋点，请传递hardwareid，dognum，gid中的至少一个确认用户身份，track失败"
+      });
+      return false;
+    }
     // sdk检验必填字段是否全部填写
     for (var i = 0, len = defaults.trackRequired.length; i < len; i++) {
       if (typeof obj[defaults.trackRequired[i]] === "undefined") {
         window.Report.onError({
           code: defaults.logCode.VALIDATE_ERROR,
-          msg:
-            "缺少必填字段：" +
-            defaults.trackRequired[i] +
-            "（" +
-            defaults.validate[defaults.trackRequired[i]].desc +
-            "）"
+          msg: `缺少必填字段：${defaults.trackRequired[i]}（${
+            defaults.validate[defaults.trackRequired[i]].desc
+          }），track失败`
         });
         return false;
       }
     }
     // sdk校验字段的合法性
     for (var key in obj) {
-      if (
-        defaults.validate[key] &&
-        !defaults.validate[key].validate(obj[key])
-      ) {
+      if (defaults.validate[key]) {
+        if (!defaults.validate[key].validate(obj[key])) {
+          window.Report.onError({
+            code: defaults.logCode.VALIDATE_ERROR,
+            msg: `字段：${key}（${defaults.validate[key].desc}）未通过校验，track失败`
+          });
+          return false;
+        }
+      } else {
         window.Report.onError({
-          code: defaults.logCode.VALIDATE_ERROR,
-          msg:
-            "字段：" + key + "（" + defaults.validate[key].desc + "）未通过校验"
+          code: defaults.logCode.SURPLUS_ERROR,
+          msg: `多余字段：${key}，不会被track处理`
         });
-        return false;
       }
     }
     return true;
@@ -380,12 +440,15 @@
    * 初始化
    * @params
    *  opts: 配置参数
-   *   debug: 测试环境，默认false
+   *   debug: 是否测试环境，默认false（正式环境）
    *  eventFuc: 事件队列，在sdk没初始化之前提前触发的事件都会加入事件队列，在sdk初始化之后，立即执行。
    */
   Report.prototype._init = function(opts, eventFuc) {
     var params = opts || {};
-    this.url = params.debug ? defaults.url.test : defaults.url.prod;
+    // this.url = params.debug ? defaults.url.test : defaults.url.prod;
+    // 在v1.1+版本，不论测试数据还是正式数据一律使用url.prod的地址去上报埋点，但是接口参数加入debug去判断：true，测试数据，false，正式数据，默认是正式数据。
+    this.url = defaults.url.prod;
+    this.debug = typeof params.debug === "boolean" ? params.debug : false;
     eventFuc && eventFuc();
     // console.log(this);
   };
@@ -398,16 +461,29 @@
    */
   Report.prototype.defineCom = function(opts) {
     if (typeof opts !== "object") {
+      window.Report.onError({
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "defineCom只支持对象格式的参数"
+      });
       return false;
     }
     // defaults.trackCom
     for (var key in opts) {
       // 传递参数是公共参数，并且通过校验，才进行初始化
-      if (
-        defaults.commonField.indexOf(key) > -1 &&
-        defaults.validate[key].validate(opts[key])
-      ) {
-        defaults.trackCom[key] = opts[key];
+      if (defaults.commonField.indexOf(key) > -1) {
+        if (defaults.validate[key].validate(opts[key])) {
+          defaults.trackCom[key] = opts[key];
+        } else {
+          window.Report.onError({
+            code: defaults.logCode.VALIDATE_ERROR,
+            msg: `字段：${key}（${defaults.validate[key].desc}）未通过校验，不会被defineCom处理`
+          });
+        }
+      } else {
+        window.Report.onError({
+          code: defaults.logCode.SURPLUS_ERROR,
+          msg: `多余字段：${key}，不会被defineCom处理`
+        });
       }
     }
     return true;
@@ -424,6 +500,26 @@
   };
 
   /**
+   * 删除指定初始化的埋点参数
+   * 具体参考commonField
+   *
+   */
+  Report.prototype.delCom = function(opts) {
+    if (Object.prototype.toString.call(opts) !== "[object Array]") {
+      window.Report.onError({
+        code: defaults.logCode.TYPE_ERROR,
+        msg: "delCom只支持数组格式的参数"
+      });
+      return false;
+    }
+    // defaults.trackCom
+    for (var i = 0, len = opts.length; i < len; i++) {
+      delete defaults.trackCom[opts[i]];
+    }
+    return true;
+  };
+
+  /**
    * 注册监听函数，支持监听错误事件
    */
   Report.prototype.listen = function(options) {
@@ -431,11 +527,18 @@
   };
 
   /**
+   * 版本
+   */
+  Report.prototype.version = "1.3";
+
+  /**
    * 发送请求，需要进行数据校验
    */
   Report.prototype.track = function(obj) {
+    // console.log("track");
     if (validate(obj)) {
-      console.log("reprot track:", obj);
+      // console.log("reprot track:", obj);
+      // console.log(this.url + "/receive");
       fetch(this.url + "/receive", {
         method: "post",
         // mode: "no-cors",
@@ -445,9 +548,13 @@
           // Accept: "application/x-www-form-urlencoded",
           "Content-Type": "application/json"
         }
-      }).then(function(data) {
-        console.log(data);
-      });
+      })
+        .then(function(data) {
+          console.log(data);
+        })
+        .catch(function(e) {
+          console.log(e);
+        });
     }
   };
 

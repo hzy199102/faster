@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+    <script src="https://unpkg.com/axios@0.19.0/dist/axios.min.js"></script>
+    <!-- exif,查看图片元数据 -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <title>mysql搞起来</title>
+  </head>
+
+  <body>
+    <div id="app">
+      <h1>
+        基操
+      </h1>
+      <button @click="add">add</button>
+      <button @click="del">del</button>
+      <button @click="update">update</button>
+      <button @click="query">query</button>
+    </div>
+
+    <script type="text/javascript">
+      var app = new Vue({
+        el: "#app",
+        data: {},
+        computed: {},
+        created: function() {},
+        methods: {
+          add() {
+            console.log("add");
+            var obj = {};
+            axios
+              .post("/user/add", obj)
+              .then(function(response) {
+                console.log(response);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          },
+          del() {
+            console.log("del");
+          },
+          update() {
+            console.log("update");
+          },
+          query() {
+            console.log("query");
+          }
+          // getUser: async function() {
+          //   await axios.get("/users/getUser");
+          // }
+        }
+      });
+    </script>
+  </body>
+</html>

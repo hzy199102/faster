@@ -1,0 +1,18 @@
+<html>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <head>
+    禁止打开控制台
+  </head>
+  <body style="font-family: '微软雅黑','Microsoft YaHei';"></body>
+</html>
+<script>
+  //debug调试时跳转页面
+  var element = new Image();
+  Object.defineProperty(element, "id", {
+    get: function() {
+      window.location.href = "https://www.baidu.com";
+      console.log(element);
+    }
+  });
+  console.log(element);
+</script>
