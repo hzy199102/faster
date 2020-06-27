@@ -36,15 +36,16 @@ app.use(async (ctx, next) => {
 });
 
 // 静态文件服务
-app.use(static(path.resolve("../client")));
+app.use(static(path.resolve("./client")));
+console.log(path.resolve("./client"));
 
 // 监听全局错误事件
-app.on("error", err => {
+app.on("error", (err) => {
   console.error(err);
 });
 
 // 监听端口
-app.listen(port, function() {
+app.listen(port, function () {
   console.log(path.resolve("./"));
   console.log(__dirname);
   console.log(`server run as http://127.0.0.1:${port}`);
