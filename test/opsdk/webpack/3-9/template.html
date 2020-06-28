@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!--注入 google_analytics 中的 JS 代码-->
+    <!-- <script src="./google_analytics.js?_inline"></script> -->
+    <!--异步加载 Disqus 评论-->
+    <!-- <script src="https://dive-into-webpack.disqus.com/embed.js" async></script> -->
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <script>
+      var modernBrowser = "fetch" in window && "assign" in Object;
+
+      if (!modernBrowser) {
+        var scriptElement = document.createElement("script");
+
+        scriptElement.async = false;
+        scriptElement.src = "./polyfills.bundle.js";
+        document.head.appendChild(scriptElement);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!--Disqus 评论容器-->
+    <!-- <div id="disqus_thread"></div> -->
+  </body>
+</html>
