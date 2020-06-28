@@ -74,7 +74,9 @@
     <script>
       (function() {
         window.Report = window.Report || [];
-        window.Report.methods = "_init track defineCom listen".split(" ");
+        window.Report.methods = "_init track defineCom listen onError".split(
+          " "
+        );
         window.Report.factory = function(b) {
           return function() {
             var a = Array.prototype.slice.call(arguments);
@@ -99,10 +101,10 @@
             a.type = "text/javascript";
             a.id = "report-js";
             a.async = !0;
-            a.src = "http://127.0.0.1:8308/js/wdc.js?v=" + verStr;
-            // a.src =
-            //   "http://aecore-static.glodon.com/prod-ops/sdk/isv/wdc.js?v=" +
-            //   verStr;
+            // a.src = "http://127.0.0.1:8308/js/wdc.js?v=" + verStr;
+            a.src =
+              "https://aecore-static.glodon.com/prod-ops/sdk/isv/wdc.js?v=" +
+              verStr;
             a.onerror = function() {
               console.log("report sdk load failed");
             };
@@ -128,6 +130,11 @@
         },
         computed: {},
         created() {
+          Report.listen({
+            onError: function(obj) {
+              console.log(obj);
+            }
+          });
           Report.defineCom({
             pcode: "-1",
             ver: "v1.0.0",
@@ -137,11 +144,7 @@
             // dognum2不是基础字段，不会被初始化
             dognum2: "123123123"
           });
-          Report.listen({
-            onError: function(obj) {
-              console.log(obj);
-            }
-          });
+
           // this.send();
         },
         methods: {
