@@ -16,6 +16,8 @@
     "build-workbox": "webpack --config webpack.workbox.js",
     "build": "webpack --config webpack.config.js --env.NODE_ENV=local --env.production",
     "build-3-9": "webpack --config 3-9/webpack.3-9.js",
+    "build-4-2-dll": "webpack --config 4-2/webpack_dll.config.js",
+    "build-4-2": "webpack --config 4-2/webpack.4-2.js",
     "http": "http-server dist"
   },
   "author": "zhier",
@@ -40,6 +42,8 @@
     "lodash": "^4.17.15",
     "lodash-es": "^4.17.15",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
     "style-loader": "^1.2.1",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.43.0",
